@@ -31,7 +31,7 @@
         }
         textarea {
             width: 100%;
-            height: 140px;
+            height: 120px;
             padding: 12px;
             border: 1px solid #d1d1d6;
             border-radius: 10px;
@@ -41,7 +41,7 @@
             outline: none;
             font-family: monospace;
         }
-        textarea:focus {
+        textarea:focus, input[type="text"]:focus {
             border-color: #007aff;
         }
         .btn-processar {
@@ -60,6 +60,37 @@
         .btn-processar:active {
             background-color: #0056b3;
         }
+        
+        .painel-ferramentas {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-pesquisa {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d1d6;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background: #fff;
+        }
+        .btn-filtro-usados {
+            padding: 12px;
+            background-color: #5856d6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-filtro-usados.ativo {
+            background-color: #34c759;
+        }
+
         .status-scroll {
             position: fixed;
             top: 10px;
@@ -72,33 +103,79 @@
             z-index: 9999;
             pointer-events: none;
         }
-        .bloco-importacao {
-            margin-top: 25px;
+        
+        .card-lote {
+            margin-top: 15px;
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             overflow: hidden;
+            border: 1px solid #e5e5ea;
         }
-        .titulo-lote {
-            background-color: #e5e5ea;
-            padding: 12px 15px;
-            font-weight: bold;
-            font-size: 15px;
-            color: #1c1c1e;
+        
+        .cabecalho-lote {
+            background-color: #ffffff;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #d1d1d6;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
         }
+        .cabecalho-lote:active {
+            background-color: #f2f2f7;
+        }
+        
+        .info-lote {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #1c1c1e;
+        }
+
+        .icone-seta {
+            font-size: 12px;
+            color: #8e8e93;
+            transition: transform 0.3s ease;
+        }
+
+        .card-lote.aberto .icone-seta {
+            transform: rotate(180deg);
+        }
+
+        .qtd-badge {
+            background: #007aff;
+            color: white;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
         .btn-excluir-lote {
             background: #ff3b30;
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-size: 12px;
+            font-weight: 600;
             cursor: pointer;
         }
+
+        .conteudo-lote {
+            display: none;
+            border-top: 1px solid #e5e5ea;
+            background-color: #fafafa;
+        }
+
+        .card-lote.aberto .conteudo-lote {
+            display: block;
+        }
+
         .tabela-container {
             overflow-x: auto;
         }
@@ -114,7 +191,7 @@
             white-space: nowrap;
         }
         th {
-            background-color: #f8f8f8;
+            background-color: #f2f2f7;
             color: #8e8e93;
             font-weight: 600;
             text-transform: uppercase;
@@ -151,6 +228,9 @@
             font-weight: 600;
             letter-spacing: 0.5px;
         }
+        tr.linha-oculta {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -165,6 +245,11 @@
     
     <button class="btn-processar" onclick="adicionarLote()">Importar e Gerar Tabela</button>
 
+    <div class="painel-ferramentas">
+        <input type="text" id="campoPesquisa" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)..." oninput="filtrarCartoes()">
+        <button id="btnOcultarUsados" class="btn-filtro-usados" onclick="alternarOcultarUsados()">Ocultar Usados</button>
+    </div>
+
     <div id="areaLotes"></div>
 </div>
 
@@ -172,12 +257,16 @@
     const CHAVE_SCROLL = 'posicao_scroll_lotes_cc';
     const CHAVE_LOTES = 'lotes_cartoes_salvos';
     const CHAVE_USADOS = 'botoes_usados_lotes_cc';
+    const CHAVE_ABERTOS = 'lotes_abertos_salvos';
+    const CHAVE_OCULTAR_USADOS = 'filtro_ocultar_usados';
 
     let lotesSalvos = JSON.parse(localStorage.getItem(CHAVE_LOTES) || '[]');
     let botoesUsados = JSON.parse(localStorage.getItem(CHAVE_USADOS) || '[]');
+    let lotesAbertos = JSON.parse(localStorage.getItem(CHAVE_ABERTOS) || '[]');
+    let ocultarUsadosAtivo = JSON.parse(localStorage.getItem(CHAVE_OCULTAR_USADOS) || 'false');
 
-    // 1. CARREGAR DADOS E RESTAURAR ROLAGEM
     window.addEventListener('DOMContentLoaded', () => {
+        atualizarBotaoFiltroVisual();
         renderizarTodosLotes();
 
         const posicaoSalva = localStorage.getItem(CHAVE_SCROLL);
@@ -206,7 +295,6 @@
         setTimeout(() => { el.style.display = 'none'; }, 2500);
     }
 
-    // 2. GERAR FORMATO DE DATA EX: Cards 23jul2026/22:05
     function gerarNomeLote() {
         const agora = new Date();
         const dia = String(agora.getDate()).padStart(2, '0');
@@ -219,7 +307,6 @@
         return `Cards ${dia}${mes}${ano}/${horas}:${minutos}`;
     }
 
-    // 3. ADICIONAR NOVO LOTE
     function adicionarLote() {
         const campoTexto = document.getElementById('entradaDados');
         const texto = campoTexto.value.trim();
@@ -229,6 +316,7 @@
             return;
         }
 
+        // Dividindo linhas com suporte universal a Windows (\r\n) e iOS/Unix (\n)
         const linhas = texto.split(/\r?\n/);
         const cartoes = [];
         let contador = 1;
@@ -259,52 +347,137 @@
             return;
         }
 
+        const idLoteNovo = Date.now();
         const novoLote = {
-            idLote: Date.now(),
+            idLote: idLoteNovo,
             nome: gerarNomeLote(),
             cartoes: cartoes
         };
 
         lotesSalvos.unshift(novoLote);
+        lotesAbertos.push(idLoteNovo);
+
         localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+        localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
 
         campoTexto.value = '';
         renderizarTodosLotes();
     }
 
-    function excluirLote(idLote) {
+    function alternarLote(idLote) {
+        const index = lotesAbertos.indexOf(idLote);
+        if (index > -1) {
+            lotesAbertos.splice(index, 1);
+        } else {
+            lotesAbertos.push(idLote);
+        }
+        localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
+        
+        const elemento = document.getElementById(`lote_${idLote}`);
+        if (elemento) {
+            elemento.classList.toggle('aberto');
+        }
+    }
+
+    function excluirLote(event, idLote) {
+        event.stopPropagation();
         if (confirm('Deseja apagar esta importação?')) {
             lotesSalvos = lotesSalvos.filter(l => l.idLote !== idLote);
+            lotesAbertos = lotesAbertos.filter(id => id !== idLote);
             localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+            localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
             renderizarTodosLotes();
         }
     }
 
-    // 4. RENDERIZAR TABELAS NA TELA
+    function alternarOcultarUsados() {
+        ocultarUsadosAtivo = !ocultarUsadosAtivo;
+        localStorage.setItem(CHAVE_OCULTAR_USADOS, JSON.stringify(ocultarUsadosAtivo));
+        atualizarBotaoFiltroVisual();
+        filtrarCartoes();
+    }
+
+    function atualizarBotaoFiltroVisual() {
+        const btn = document.getElementById('btnOcultarUsados');
+        if (ocultarUsadosAtivo) {
+            btn.innerText = 'Mostrar Usados';
+            btn.classList.add('ativo');
+        } else {
+            btn.innerText = 'Ocultar Usados';
+            btn.classList.remove('ativo');
+        }
+    }
+
+    function filtrarCartoes() {
+        const termo = document.getElementById('campoPesquisa').value.trim().toLowerCase();
+
+        lotesSalvos.forEach(lote => {
+            const cardElemento = document.getElementById(`lote_${lote.idLote}`);
+            if (!cardElemento) return;
+
+            let linhasVisiveisNoLote = 0;
+
+            lote.cartoes.forEach(c => {
+                const idUnico = `cc_${lote.idLote}_${c.numero}`;
+                const jaFoiUsado = botoesUsados.includes(idUnico);
+                const trElemento = document.getElementById(`tr_${idUnico}`);
+
+                if (!trElemento) return;
+
+                const atendePesquisa = termo === '' || c.numero.toLowerCase().includes(termo);
+                const atendeFiltroUsado = !ocultarUsadosAtivo || !jaFoiUsado;
+
+                if (atendePesquisa && atendeFiltroUsado) {
+                    trElemento.classList.remove('linha-oculta');
+                    linhasVisiveisNoLote++;
+                } else {
+                    trElemento.classList.add('linha-oculta');
+                }
+            });
+
+            if (termo !== '' && linhasVisiveisNoLote > 0) {
+                cardElemento.classList.add('aberto');
+            }
+
+            if (linhasVisiveisNoLote === 0 && (termo !== '' || ocultarUsadosAtivo)) {
+                cardElemento.style.display = 'none';
+            } else {
+                cardElemento.style.display = 'block';
+            }
+        });
+    }
+
     function renderizarTodosLotes() {
         const area = document.getElementById('areaLotes');
         area.innerHTML = '';
 
         lotesSalvos.forEach(lote => {
+            const estaAberto = lotesAbertos.includes(lote.idLote);
             const divLote = document.createElement('div');
-            divLote.className = 'bloco-importacao';
+            divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
+            divLote.id = `lote_${lote.idLote}`;
 
-            let tabelaHtml = `
-                <div class="titulo-lote">
-                    <span>${lote.nome} (${lote.cartoes.length})</span>
-                    <button class="btn-excluir-lote" onclick="excluirLote(${lote.idLote})">Apagar</button>
+            let html = `
+                <div class="cabecalho-lote" onclick="alternarLote(${lote.idLote})">
+                    <div class="info-lote">
+                        <span class="icone-seta">▼</span>
+                        <span>${lote.nome}</span>
+                        <span class="qtd-badge">${lote.cartoes.length}</span>
+                    </div>
+                    <button class="btn-excluir-lote" onclick="excluirLote(event, ${lote.idLote})">Apagar</button>
                 </div>
-                <div class="tabela-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nº</th>
-                                <th>Número do Cartão</th>
-                                <th>Validade</th>
-                                <th>CVV</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+                <div class="conteudo-lote">
+                    <div class="tabela-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nº</th>
+                                    <th>Número do Cartão</th>
+                                    <th>Validade</th>
+                                    <th>CVV</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
 
             lote.cartoes.forEach(c => {
                 const idUnico = `cc_${lote.idLote}_${c.numero}`;
@@ -312,8 +485,8 @@
                 const classeStatus = jaFoiUsado ? 'btn-copiar usado' : 'btn-copiar';
                 const textoBotao = jaFoiUsado ? 'Usado!' : 'Copiar';
 
-                tabelaHtml += `
-                    <tr>
+                html += `
+                    <tr id="tr_${idUnico}">
                         <td><span class="badge-id">${c.idItem}</span></td>
                         <td>
                             <span class="cartao-num">${c.numero}</span>
@@ -324,17 +497,19 @@
                     </tr>`;
             });
 
-            tabelaHtml += `
-                        </tbody>
-                    </table>
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
                 </div>`;
 
-            divLote.innerHTML = tabelaHtml;
+            divLote.innerHTML = html;
             area.appendChild(divLote);
         });
+
+        filtrarCartoes();
     }
 
-    // 5. COPIAR E DEIXAR VERMELHO
     function copiarTexto(botao, texto) {
         navigator.clipboard.writeText(texto).then(() => {
             const id = botao.getAttribute('data-id');
@@ -345,6 +520,10 @@
             if (id && !botoesUsados.includes(id)) {
                 botoesUsados.push(id);
                 localStorage.setItem(CHAVE_USADOS, JSON.stringify(botoesUsados));
+            }
+
+            if (ocultarUsadosAtivo) {
+                filtrarCartoes();
             }
         }).catch(err => {
             console.error('Erro ao copiar: ', err);
