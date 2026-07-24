@@ -99,7 +99,7 @@
         }
         .input-pesquisa {
             flex: 1;
-            min-width: 200px;
+            min-width: 100%;
             padding: 12px;
             border: 1px solid #333;
             border-radius: 6px;
@@ -108,7 +108,14 @@
             background: #181818;
             color: #fff;
         }
-        .btn-filtro-usados {
+        .grupo-botoes-filtros {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+        .btn-filtro-usados, .btn-backup {
+            flex: 1;
             padding: 12px 18px;
             background-color: #2b2b2b;
             color: white;
@@ -118,10 +125,25 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            text-align: center;
         }
         .btn-filtro-usados.ativo {
             background-color: #E50914;
             border-color: #E50914;
+        }
+        .btn-backup:hover {
+            background-color: #444;
+        }
+
+        @media (min-width: 600px) {
+            .input-pesquisa {
+                flex: 2;
+                min-width: 200px;
+            }
+            .grupo-botoes-filtros {
+                flex: 3;
+                width: auto;
+            }
         }
 
         .status-scroll {
@@ -308,7 +330,12 @@
 
     <div class="painel-ferramentas">
         <input type="text" id="campoPesquisa" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)..." oninput="filtrarCartoes()">
-        <button id="btnOcultarUsados" class="btn-filtro-usados" onclick="alternarOcultarUsados()">Ocultar Usados</button>
+        <div class="grupo-botoes-filtros">
+            <button id="btnOcultarUsados" class="btn-filtro-usados" onclick="alternarOcultarUsados()">Ocultar Usados</button>
+            <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
+            <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
+            <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBackup(event)">
+        </div>
     </div>
 
     <div id="areaLotes"></div>
@@ -401,7 +428,6 @@
             return;
         }
 
-        // USANDO O FORMATO DE QUEBRA DE LINHA CORRIGIDO PARA EVITAR ERROS DE JAVASCRIPT
         const linhas = texto.split(/\r?\n/);
         const cartoes = [];
         let contador = 1;
@@ -467,7 +493,7 @@
 
     function excluirLote(event, idLote) {
         event.stopPropagation();
-        if (confirm('Deseja apagar esta importação?')) {
+        if (confirm('Deseja apagar esta extração?')) {
             lotesSalvos = lotesSalvos.filter(l => l.idLote !== idLote);
             lotesAbertos = lotesAbertos.filter(id => id !== idLote);
             localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
@@ -620,6 +646,74 @@
         }).catch(err => {
             console.error('Erro ao copiar: ', err);
         });
+    }
+
+    /* ====== FUNÇÕES DE BACKUP ====== */
+    function exportarBackup() {
+        if (lotesSalvos.length === 0) {
+            alert('Não há dados para exportar!');
+            return;
+        }
+
+        const backupData = {
+            lotes: localStorage.getItem(CHAVE_LOTES),
+            usados: localStorage.getItem(CHAVE_USADOS),
+            abertos: localStorage.getItem(CHAVE_ABERTOS),
+            ocultarUsados: localStorage.getItem(CHAVE_OCULTAR_USADOS)
+        };
+
+        const dataStr = JSON.stringify(backupData);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        const nomeArquivo = `bklogins_backup_${gerarDataHoraFormatada().replace(/[\/:]/g, '-')}.json`;
+        a.download = nomeArquivo;
+        
+        document.body.appendChild(a);
+        a.click();
+        
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importarBackup(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                // Validação simples para ver se o arquivo é do nosso extrator
+                if (data.lotes !== undefined) {
+                    localStorage.setItem(CHAVE_LOTES, data.lotes || '[]');
+                    localStorage.setItem(CHAVE_USADOS, data.usados || '[]');
+                    localStorage.setItem(CHAVE_ABERTOS, data.abertos || '[]');
+                    localStorage.setItem(CHAVE_OCULTAR_USADOS, data.ocultarUsados || 'false');
+
+                    // Atualiza as variaveis de memoria
+                    lotesSalvos = JSON.parse(data.lotes || '[]');
+                    botoesUsados = JSON.parse(data.usados || '[]');
+                    lotesAbertos = JSON.parse(data.abertos || '[]');
+                    ocultarUsadosAtivo = JSON.parse(data.ocultarUsados || 'false');
+
+                    atualizarBotaoFiltroVisual();
+                    renderizarTodosLotes();
+                    
+                    alert('✅ Backup restaurado com sucesso!');
+                } else {
+                    alert('❌ Arquivo de backup inválido ou incompatível.');
+                }
+            } catch (err) {
+                alert('❌ Erro ao ler o arquivo de backup.');
+            }
+            // Reseta o input file para permitir importar o mesmo arquivo de novo se necessario
+            event.target.value = '';
+        };
+        reader.readAsText(file);
     }
 </script>
 
