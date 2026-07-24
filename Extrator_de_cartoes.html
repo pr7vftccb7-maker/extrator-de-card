@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrator de Cartões por Lotes</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 15px;
+            background-color: #f2f2f7;
+            color: #1c1c1e;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h2 {
+            margin-top: 10px;
+            font-size: 20px;
+            color: #000;
+        }
+        .instrucoes {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        textarea {
+            width: 100%;
+            height: 140px;
+            padding: 12px;
+            border: 1px solid #d1d1d6;
+            border-radius: 10px;
+            font-size: 14px;
+            background-color: #fff;
+            resize: vertical;
+            outline: none;
+            font-family: monospace;
+        }
+        textarea:focus {
+            border-color: #007aff;
+        }
+        .btn-processar {
+            width: 100%;
+            margin-top: 10px;
+            padding: 14px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-processar:active {
+            background-color: #0056b3;
+        }
+        .status-scroll {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .bloco-importacao {
+            margin-top: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .titulo-lote {
+            background-color: #e5e5ea;
+            padding: 12px 15px;
+            font-weight: bold;
+            font-size: 15px;
+            color: #1c1c1e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #d1d1d6;
+        }
+        .btn-excluir-lote {
+            background: #ff3b30;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tabela-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e5ea;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f8f8f8;
+            color: #8e8e93;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        .btn-copiar {
+            background-color: #e5e5ea;
+            color: #007aff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 6px;
+            transition: all 0.2s;
+        }
+        .btn-copiar.usado {
+            background-color: #ff3b30 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .badge-id {
+            background: #e5e5ea;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #3a3a3c;
+        }
+        .cartao-num {
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
+
+<div class="container">
+    <h2>Importar Cartões por Lote</h2>
+    <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
+    
+    <textarea id="entradaDados" placeholder="Cole aqui seus cartões..."></textarea>
+    
+    <button class="btn-processar" onclick="adicionarLote()">Importar e Gerar Tabela</button>
+
+    <div id="areaLotes"></div>
+</div>
+
+<script>
+    const CHAVE_SCROLL = 'posicao_scroll_lotes_cc';
+    const CHAVE_LOTES = 'lotes_cartoes_salvos';
+    const CHAVE_USADOS = 'botoes_usados_lotes_cc';
+
+    let lotesSalvos = JSON.parse(localStorage.getItem(CHAVE_LOTES) || '[]');
+    let botoesUsados = JSON.parse(localStorage.getItem(CHAVE_USADOS) || '[]');
+
+    // 1. CARREGAR DADOS E RESTAURAR ROLAGEM
+    window.addEventListener('DOMContentLoaded', () => {
+        renderizarTodosLotes();
+
+        const posicaoSalva = localStorage.getItem(CHAVE_SCROLL);
+        if (posicaoSalva !== null) {
+            setTimeout(() => {
+                window.scrollTo(0, parseInt(posicaoSalva, 10));
+                mostrarStatus('Posição restaurada!');
+            }, 100);
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        localStorage.setItem(CHAVE_SCROLL, window.scrollY);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            localStorage.setItem(CHAVE_SCROLL, window.scrollY);
+        }
+    });
+
+    function mostrarStatus(mensagem) {
+        const el = document.getElementById('statusScroll');
+        el.innerText = mensagem;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 2500);
+    }
+
+    // 2. GERAR FORMATO DE DATA EX: Cards 23jul2026/22:05
+    function gerarNomeLote() {
+        const agora = new Date();
+        const dia = String(agora.getDate()).padStart(2, '0');
+        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        const mes = meses[agora.getMonth()];
+        const ano = agora.getFullYear();
+        const horas = String(agora.getHours()).padStart(2, '0');
+        const minutos = String(agora.getMinutes()).padStart(2, '0');
+
+        return `Cards ${dia}${mes}${ano}/${horas}:${minutos}`;
+    }
+
+    // 3. ADICIONAR NOVO LOTE
+    function adicionarLote() {
+        const campoTexto = document.getElementById('entradaDados');
+        const texto = campoTexto.value.trim();
+
+        if (!texto) {
+            alert('Cole uma lista de cartões antes de importar.');
+            return;
+        }
+
+        const linhas = texto.split(/\r?\n/);
+        const cartoes = [];
+        let contador = 1;
+
+        linhas.forEach(linha => {
+            const l = linha.trim();
+            if (!l) return;
+
+            const partes = l.split('|');
+            const numero = partes[0] ? partes[0].trim() : '';
+            if (!numero) return;
+
+            const mes = partes[1] ? partes[1].trim() : '';
+            const ano = partes[2] ? partes[2].trim() : '';
+            const cvv = partes[3] ? partes[3].trim() : '-';
+            const validade = (mes || ano) ? `${mes}/${ano}` : '-';
+
+            cartoes.push({
+                idItem: contador++,
+                numero: numero,
+                validade: validade,
+                cvv: cvv
+            });
+        });
+
+        if (cartoes.length === 0) {
+            alert('Nenhum cartão válido foi identificado.');
+            return;
+        }
+
+        const novoLote = {
+            idLote: Date.now(),
+            nome: gerarNomeLote(),
+            cartoes: cartoes
+        };
+
+        lotesSalvos.unshift(novoLote);
+        localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+
+        campoTexto.value = '';
+        renderizarTodosLotes();
+    }
+
+    function excluirLote(idLote) {
+        if (confirm('Deseja apagar esta importação?')) {
+            lotesSalvos = lotesSalvos.filter(l => l.idLote !== idLote);
+            localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+            renderizarTodosLotes();
+        }
+    }
+
+    // 4. RENDERIZAR TABELAS NA TELA
+    function renderizarTodosLotes() {
+        const area = document.getElementById('areaLotes');
+        area.innerHTML = '';
+
+        lotesSalvos.forEach(lote => {
+            const divLote = document.createElement('div');
+            divLote.className = 'bloco-importacao';
+
+            let tabelaHtml = `
+                <div class="titulo-lote">
+                    <span>${lote.nome} (${lote.cartoes.length})</span>
+                    <button class="btn-excluir-lote" onclick="excluirLote(${lote.idLote})">Apagar</button>
+                </div>
+                <div class="tabela-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Número do Cartão</th>
+                                <th>Validade</th>
+                                <th>CVV</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            lote.cartoes.forEach(c => {
+                const idUnico = `cc_${lote.idLote}_${c.numero}`;
+                const jaFoiUsado = botoesUsados.includes(idUnico);
+                const classeStatus = jaFoiUsado ? 'btn-copiar usado' : 'btn-copiar';
+                const textoBotao = jaFoiUsado ? 'Usado!' : 'Copiar';
+
+                tabelaHtml += `
+                    <tr>
+                        <td><span class="badge-id">${c.idItem}</span></td>
+                        <td>
+                            <span class="cartao-num">${c.numero}</span>
+                            <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${c.numero}')">${textoBotao}</button>
+                        </td>
+                        <td>${c.validade}</td>
+                        <td>${c.cvv}</td>
+                    </tr>`;
+            });
+
+            tabelaHtml += `
+                        </tbody>
+                    </table>
+                </div>`;
+
+            divLote.innerHTML = tabelaHtml;
+            area.appendChild(divLote);
+        });
+    }
+
+    // 5. COPIAR E DEIXAR VERMELHO
+    function copiarTexto(botao, texto) {
+        navigator.clipboard.writeText(texto).then(() => {
+            const id = botao.getAttribute('data-id');
+
+            botao.innerText = 'Usado!';
+            botao.classList.add('usado');
+
+            if (id && !botoesUsados.includes(id)) {
+                botoesUsados.push(id);
+                localStorage.setItem(CHAVE_USADOS, JSON.stringify(botoesUsados));
+            }
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+        });
+    }
+</script>
+
+</body>
+</html>
