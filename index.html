@@ -3,142 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extrator de Cartões por Lotes</title>
+    <title>bklogins - Extrator de Cartões</title>
     <style>
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 15px;
-            background-color: #f2f2f7;
-            color: #1c1c1e;
-            margin: 0;
+            padding: 20px 15px;
+            background-color: #141414;
+            color: #ffffff;
         }
         .container {
             max-width: 900px;
             margin: 0 auto;
         }
-        h2 {
-            margin-top: 10px;
-            font-size: 20px;
-            color: #000;
+
+        /* HEADER BKLOGINS */
+        .netflix-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
         }
+        .logo-bklogins {
+            color: #E50914;
+            font-size: 26px;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: lowercase;
+        }
+        .badge-sub {
+            background-color: #E50914;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        /* CAMPO DE TEXTO E BOTÃO PRINCIPAL */
         .instrucoes {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 12px;
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 10px;
         }
         textarea {
             width: 100%;
-            height: 120px;
+            height: 110px;
             padding: 12px;
-            border: 1px solid #d1d1d6;
-            border-radius: 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
             font-size: 14px;
-            background-color: #fff;
+            background-color: #181818;
+            color: #fff;
             resize: vertical;
             outline: none;
             font-family: monospace;
+            transition: border-color 0.2s;
         }
         textarea:focus, input[type="text"]:focus {
-            border-color: #007aff;
+            border-color: #E50914;
         }
         .btn-processar {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 12px;
             padding: 14px;
-            background-color: #007aff;
+            background-color: #E50914;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background-color 0.2s, transform 0.1s;
         }
         .btn-processar:active {
-            background-color: #0056b3;
+            background-color: #B81D24;
+            transform: scale(0.99);
         }
-        
+
+        /* BARRA DE FERRAMENTAS E PESQUISA */
         .painel-ferramentas {
             margin-top: 20px;
             display: flex;
-            flex-direction: column;
             gap: 10px;
+            flex-wrap: wrap;
         }
         .input-pesquisa {
-            width: 100%;
+            flex: 1;
+            min-width: 200px;
             padding: 12px;
-            border: 1px solid #d1d1d6;
-            border-radius: 10px;
-            font-size: 15px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-size: 14px;
             outline: none;
-            background: #fff;
+            background: #181818;
+            color: #fff;
         }
         .btn-filtro-usados {
-            padding: 12px;
-            background-color: #5856d6;
+            padding: 12px 18px;
+            background-color: #2b2b2b;
             color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
         .btn-filtro-usados.ativo {
-            background-color: #34c759;
+            background-color: #E50914;
+            border-color: #E50914;
         }
 
         .status-scroll {
             position: fixed;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(229, 9, 20, 0.9);
             color: #fff;
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
+            font-weight: bold;
             z-index: 9999;
             pointer-events: none;
         }
-        
+
+        /* CARDS ESTILO NETFLIX (COM BANNERS TOP 20) */
         .card-lote {
-            margin-top: 15px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-top: 20px;
+            background: #181818;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             overflow: hidden;
-            border: 1px solid #e5e5ea;
+            border: 1px solid #2b2b2b;
         }
-        
+
+        .banner-lote {
+            height: 120px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            cursor: pointer;
+        }
+        .banner-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(20,20,20,0.2) 0%, rgba(20,20,20,0.95) 100%);
+        }
+
         .cabecalho-lote {
-            background-color: #ffffff;
-            padding: 16px;
+            position: relative;
+            z-index: 2;
+            padding: 12px 15px;
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: pointer;
             user-select: none;
-            transition: background-color 0.2s;
         }
-        .cabecalho-lote:active {
-            background-color: #f2f2f7;
-        }
-        
+
         .info-lote {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 15px;
-            color: #1c1c1e;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         .icone-seta {
             font-size: 12px;
-            color: #8e8e93;
+            color: #aaa;
             transition: transform 0.3s ease;
         }
 
@@ -147,33 +195,34 @@
         }
 
         .qtd-badge {
-            background: #007aff;
+            background: #E50914;
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             padding: 2px 8px;
-            border-radius: 10px;
+            border-radius: 4px;
             font-weight: bold;
         }
 
         .btn-excluir-lote {
-            background: #ff3b30;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: background 0.2s;
+        }
+        .btn-excluir-lote:hover {
+            background: #E50914;
+            border-color: #E50914;
         }
 
         .conteudo-lote {
-            display: none;
-            border-top: 1px solid #e5e5ea;
-            background-color: #fafafa;
-        }
-
-        .card-lote.aberto .conteudo-lote {
-            display: block;
+            background-color: #181818;
+            border-top: 1px solid #282828;
         }
 
         .tabela-container {
@@ -183,51 +232,59 @@
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 14px;
+            font-size: 13px;
         }
         th, td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #e5e5ea;
+            padding: 12px 12px;
+            border-bottom: 1px solid #282828;
             white-space: nowrap;
         }
         th {
-            background-color: #f2f2f7;
-            color: #8e8e93;
-            font-weight: 600;
+            background-color: #1f1f1f;
+            color: #808080;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
         }
         .btn-copiar {
-            background-color: #e5e5ea;
-            color: #007aff;
+            background-color: #E50914;
+            color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 6px;
+            padding: 5px 12px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            margin-left: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
             transition: all 0.2s;
         }
         .btn-copiar.usado {
-            background-color: #ff3b30 !important;
-            color: white !important;
+            background-color: #333 !important;
+            color: #777 !important;
             font-weight: bold;
+            cursor: default;
         }
         .badge-id {
-            background: #e5e5ea;
+            background: #282828;
             padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: bold;
-            color: #3a3a3c;
+            color: #aaa;
         }
         .cartao-num {
             font-family: monospace;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             letter-spacing: 0.5px;
+            color: #fff;
         }
+
+        .card-lote:not(.aberto) tr.linha-secundaria {
+            display: none !important;
+        }
+
         tr.linha-oculta {
             display: none !important;
         }
@@ -238,10 +295,14 @@
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
 <div class="container">
-    <h2>Importar Cartões por Lote</h2>
+    <div class="netflix-header">
+        <div class="logo-bklogins">bklogins</div>
+        <div class="badge-sub">EXTRATOR PRO</div>
+    </div>
+
     <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
     
-    <textarea id="entradaDados" placeholder="Cole aqui seus cartões..."></textarea>
+    <textarea id="entradaDados" placeholder="Cole seus dados aqui..."></textarea>
     
     <button class="btn-processar" onclick="adicionarLote()">Importar e Gerar Tabela</button>
 
@@ -259,6 +320,30 @@
     const CHAVE_USADOS = 'botoes_usados_lotes_cc';
     const CHAVE_ABERTOS = 'lotes_abertos_salvos';
     const CHAVE_OCULTAR_USADOS = 'filtro_ocultar_usados';
+
+    // TOP 20 SÉRIES POPULARES NETFLIX
+    const TOP_20_SERIES = [
+        { nome: "Stranger Things", url: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Round 6 (Squid Game)", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Wandinha (Wednesday)", url: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80" },
+        { nome: "La Casa de Papel", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80" },
+        { nome: "The Witcher", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Bridgerton", url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80" },
+        { nome: "O Gambito da Rainha", url: "https://images.unsplash.com/photo-1586165368502-1bad197a6461?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Dark", url: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Peaky Blinders", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Black Mirror", url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Lupin", url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Sex Education", url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80" },
+        { nome: "The Crown", url: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80" },
+        { nome: "You", url: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Cobra Kai", url: "https://images.unsplash.com/photo-1555597673-b21d5c935865?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Narcos", url: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Emily em Paris", url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Mindhunter", url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Elite", url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Ozark", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80" }
+    ];
 
     let lotesSalvos = JSON.parse(localStorage.getItem(CHAVE_LOTES) || '[]');
     let botoesUsados = JSON.parse(localStorage.getItem(CHAVE_USADOS) || '[]');
@@ -295,7 +380,7 @@
         setTimeout(() => { el.style.display = 'none'; }, 2500);
     }
 
-    function gerarNomeLote() {
+    function gerarDataHoraFormatada() {
         const agora = new Date();
         const dia = String(agora.getDate()).padStart(2, '0');
         const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -304,7 +389,7 @@
         const horas = String(agora.getHours()).padStart(2, '0');
         const minutos = String(agora.getMinutes()).padStart(2, '0');
 
-        return `Cards ${dia}${mes}${ano}/${horas}:${minutos}`;
+        return `${dia}${mes}${ano}/${horas}:${minutos}`;
     }
 
     function adicionarLote() {
@@ -316,7 +401,7 @@
             return;
         }
 
-        // Dividindo linhas com suporte universal a Windows (\r\n) e iOS/Unix (\n)
+        // USANDO O FORMATO DE QUEBRA DE LINHA CORRIGIDO PARA EVITAR ERROS DE JAVASCRIPT
         const linhas = texto.split(/\r?\n/);
         const cartoes = [];
         let contador = 1;
@@ -347,18 +432,19 @@
             return;
         }
 
+        const indiceSerie = lotesSalvos.length % TOP_20_SERIES.length;
+        const serieSelecionada = TOP_20_SERIES[indiceSerie];
+
         const idLoteNovo = Date.now();
         const novoLote = {
             idLote: idLoteNovo,
-            nome: gerarNomeLote(),
+            nome: `${serieSelecionada.nome} • ${gerarDataHoraFormatada()}`,
+            banner: serieSelecionada.url,
             cartoes: cartoes
         };
 
         lotesSalvos.unshift(novoLote);
-        lotesAbertos.push(idLoteNovo);
-
         localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
-        localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
 
         campoTexto.value = '';
         renderizarTodosLotes();
@@ -457,14 +543,19 @@
             divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
             divLote.id = `lote_${lote.idLote}`;
 
+            const bannerUrl = lote.banner || TOP_20_SERIES[0].url;
+
             let html = `
-                <div class="cabecalho-lote" onclick="alternarLote(${lote.idLote})">
-                    <div class="info-lote">
-                        <span class="icone-seta">▼</span>
-                        <span>${lote.nome}</span>
-                        <span class="qtd-badge">${lote.cartoes.length}</span>
+                <div class="banner-lote" style="background-image: url('${bannerUrl}');" onclick="alternarLote(${lote.idLote})">
+                    <div class="banner-overlay"></div>
+                    <div class="cabecalho-lote">
+                        <div class="info-lote">
+                            <span class="icone-seta">▼</span>
+                            <span>${lote.nome}</span>
+                            <span class="qtd-badge">${lote.cartoes.length}</span>
+                        </div>
+                        <button class="btn-excluir-lote" onclick="excluirLote(event, ${lote.idLote})">Apagar</button>
                     </div>
-                    <button class="btn-excluir-lote" onclick="excluirLote(event, ${lote.idLote})">Apagar</button>
                 </div>
                 <div class="conteudo-lote">
                     <div class="tabela-container">
@@ -479,14 +570,15 @@
                             </thead>
                             <tbody>`;
 
-            lote.cartoes.forEach(c => {
+            lote.cartoes.forEach((c, index) => {
                 const idUnico = `cc_${lote.idLote}_${c.numero}`;
                 const jaFoiUsado = botoesUsados.includes(idUnico);
                 const classeStatus = jaFoiUsado ? 'btn-copiar usado' : 'btn-copiar';
                 const textoBotao = jaFoiUsado ? 'Usado!' : 'Copiar';
+                const classeSecundaria = index > 0 ? 'linha-secundaria' : '';
 
                 html += `
-                    <tr id="tr_${idUnico}">
+                    <tr id="tr_${idUnico}" class="${classeSecundaria}">
                         <td><span class="badge-id">${c.idItem}</span></td>
                         <td>
                             <span class="cartao-num">${c.numero}</span>
