@@ -281,12 +281,21 @@
             margin-left: 8px;
             transition: all 0.2s;
         }
+        
+        /* ESTILOS DE STATUS DOS BOTÕES */
         .btn-copiar.usado {
             background-color: #333 !important;
             color: #777 !important;
             font-weight: bold;
             cursor: default;
         }
+        .btn-copiar.ultimo-copiado {
+            background-color: #34c759 !important; /* Verde estilo iOS */
+            color: #ffffff !important;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(52, 199, 89, 0.3);
+        }
+
         .badge-id {
             background: #282828;
             padding: 3px 8px;
@@ -347,6 +356,7 @@
     const CHAVE_USADOS = 'botoes_usados_lotes_cc';
     const CHAVE_ABERTOS = 'lotes_abertos_salvos';
     const CHAVE_OCULTAR_USADOS = 'filtro_ocultar_usados';
+    const CHAVE_ULTIMO_COPIADO = 'ultimo_copiado_cc';
 
     // TOP 20 SÉRIES POPULARES NETFLIX
     const TOP_20_SERIES = [
@@ -376,6 +386,7 @@
     let botoesUsados = JSON.parse(localStorage.getItem(CHAVE_USADOS) || '[]');
     let lotesAbertos = JSON.parse(localStorage.getItem(CHAVE_ABERTOS) || '[]');
     let ocultarUsadosAtivo = JSON.parse(localStorage.getItem(CHAVE_OCULTAR_USADOS) || 'false');
+    let ultimoCopiadoId = localStorage.getItem(CHAVE_ULTIMO_COPIADO) || null;
 
     window.addEventListener('DOMContentLoaded', () => {
         atualizarBotaoFiltroVisual();
@@ -599,8 +610,21 @@
             lote.cartoes.forEach((c, index) => {
                 const idUnico = `cc_${lote.idLote}_${c.numero}`;
                 const jaFoiUsado = botoesUsados.includes(idUnico);
-                const classeStatus = jaFoiUsado ? 'btn-copiar usado' : 'btn-copiar';
-                const textoBotao = jaFoiUsado ? 'Usado!' : 'Copiar';
+                const ehUltimo = (idUnico === ultimoCopiadoId);
+                
+                let classeStatus = 'btn-copiar';
+                let textoBotao = 'Copiar';
+                
+                if (jaFoiUsado) {
+                    classeStatus += ' usado';
+                    textoBotao = 'Usado!';
+                }
+                
+                // Se for o último cartão a ser copiado, recebe a classe extra verde
+                if (ehUltimo) {
+                    classeStatus += ' ultimo-copiado';
+                }
+
                 const classeSecundaria = index > 0 ? 'linha-secundaria' : '';
 
                 html += `
@@ -632,12 +656,26 @@
         navigator.clipboard.writeText(texto).then(() => {
             const id = botao.getAttribute('data-id');
 
+            // 1. Remove visualmente a marcação verde de qualquer outro botão na tela
+            document.querySelectorAll('.btn-copiar.ultimo-copiado').forEach(btn => {
+                btn.classList.remove('ultimo-copiado');
+            });
+
+            // 2. Aplica "Usado" e "Ultimo Copiado" (Verde) no botão clicado agora
             botao.innerText = 'Usado!';
             botao.classList.add('usado');
+            botao.classList.add('ultimo-copiado');
 
+            // 3. Salva no histórico de usados (se já não estiver)
             if (id && !botoesUsados.includes(id)) {
                 botoesUsados.push(id);
                 localStorage.setItem(CHAVE_USADOS, JSON.stringify(botoesUsados));
+            }
+            
+            // 4. Salva o ID deste botão como o ÚLTIMO que foi copiado
+            if (id) {
+                ultimoCopiadoId = id;
+                localStorage.setItem(CHAVE_ULTIMO_COPIADO, ultimoCopiadoId);
             }
 
             if (ocultarUsadosAtivo) {
@@ -659,7 +697,8 @@
             lotes: localStorage.getItem(CHAVE_LOTES),
             usados: localStorage.getItem(CHAVE_USADOS),
             abertos: localStorage.getItem(CHAVE_ABERTOS),
-            ocultarUsados: localStorage.getItem(CHAVE_OCULTAR_USADOS)
+            ocultarUsados: localStorage.getItem(CHAVE_OCULTAR_USADOS),
+            ultimoCopiado: localStorage.getItem(CHAVE_ULTIMO_COPIADO)
         };
 
         const dataStr = JSON.stringify(backupData);
@@ -687,18 +726,19 @@
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Validação simples para ver se o arquivo é do nosso extrator
                 if (data.lotes !== undefined) {
                     localStorage.setItem(CHAVE_LOTES, data.lotes || '[]');
                     localStorage.setItem(CHAVE_USADOS, data.usados || '[]');
                     localStorage.setItem(CHAVE_ABERTOS, data.abertos || '[]');
                     localStorage.setItem(CHAVE_OCULTAR_USADOS, data.ocultarUsados || 'false');
+                    localStorage.setItem(CHAVE_ULTIMO_COPIADO, data.ultimoCopiado || '');
 
                     // Atualiza as variaveis de memoria
                     lotesSalvos = JSON.parse(data.lotes || '[]');
                     botoesUsados = JSON.parse(data.usados || '[]');
                     lotesAbertos = JSON.parse(data.abertos || '[]');
                     ocultarUsadosAtivo = JSON.parse(data.ocultarUsados || 'false');
+                    ultimoCopiadoId = data.ultimoCopiado || null;
 
                     atualizarBotaoFiltroVisual();
                     renderizarTodosLotes();
@@ -710,7 +750,6 @@
             } catch (err) {
                 alert('❌ Erro ao ler o arquivo de backup.');
             }
-            // Reseta o input file para permitir importar o mesmo arquivo de novo se necessario
             event.target.value = '';
         };
         reader.readAsText(file);
