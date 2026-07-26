@@ -48,12 +48,22 @@
             padding-bottom: 15px;
             border-bottom: 1px solid #333;
         }
+        .logo-grupo {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
         .logo-bklogins {
             color: #E50914;
             font-size: 26px;
             font-weight: 900;
             letter-spacing: 1.5px;
             text-transform: lowercase;
+        }
+        .versao-tag {
+            color: #888;
+            font-size: 12px;
+            font-weight: 700;
         }
         .badge-sub {
             background-color: #E50914;
@@ -420,7 +430,10 @@
 <div id="view-cards" class="view active">
     <div class="container">
         <div class="netflix-header">
-            <div class="logo-bklogins">bklogins</div>
+            <div class="logo-grupo">
+                <div class="logo-bklogins">bklogins</div>
+                <div class="versao-tag">v10</div>
+            </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
 
@@ -446,7 +459,10 @@
 <div id="view-emails" class="view">
     <div class="container">
         <div class="netflix-header">
-            <div class="logo-bklogins">bklogins</div>
+            <div class="logo-grupo">
+                <div class="logo-bklogins">bklogins</div>
+                <div class="versao-tag">v10</div>
+            </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
 
@@ -483,27 +499,28 @@
 </nav>
 
 <script>
+    // Usamos as chaves fixas genéricas 'lotes_cartoes_geral' e 'lotes_emails_geral' para garantircompatibilidade universal com backups antigos e novos
     const CHAVES = {
-        scroll: 'posicao_scroll_v9',
+        scroll: 'posicao_scroll_v10',
         cards: {
-            lotes: 'lotes_cartoes_v9',
-            usados: 'botoes_usados_cartoes_v9',
-            abertos: 'lotes_abertos_cartoes_v9',
-            ocultar: 'filtro_ocultar_cartoes_v9',
-            ultimo: 'ultimo_copiado_cartoes_v9'
+            lotes: 'lotes_cartoes_geral',
+            usados: 'botoes_usados_cartoes_geral',
+            abertos: 'lotes_abertos_cartoes_geral',
+            ocultar: 'filtro_ocultar_cartoes_geral',
+            ultimo: 'ultimo_copiado_cartoes_geral'
         },
         emails: {
-            lotes: 'lotes_emails_v9',
-            usados: 'botoes_usados_emails_v9',
-            abertos: 'lotes_abertos_emails_v9',
-            ocultar: 'filtro_ocultar_emails_v9',
-            ocultarVirgens: 'filtro_ocultar_virgens_v9',
-            ocultarSuspensas: 'filtro_ocultar_suspensas_v9',
-            ocultarAssinadas: 'filtro_ocultar_assinadas_v9',
-            status: 'status_emails_v9',
-            ultimo: 'ultimo_copiado_emails_v9'
+            lotes: 'lotes_emails_geral',
+            usados: 'botoes_usados_emails_geral',
+            abertos: 'lotes_abertos_emails_geral',
+            ocultar: 'filtro_ocultar_emails_geral',
+            ocultarVirgens: 'filtro_ocultar_virgens_geral',
+            ocultarSuspensas: 'filtro_ocultar_suspensas_geral',
+            ocultarAssinadas: 'filtro_ocultar_assinadas_geral',
+            status: 'status_emails_geral',
+            ultimo: 'ultimo_copiado_emails_geral'
         },
-        abaAtiva: 'aba_ativa_v9'
+        abaAtiva: 'aba_ativa_v10'
     };
 
     const BANNERS = [
@@ -679,7 +696,7 @@
                 const idUnico = `item_emails_${novoLote.idLote}_${item.idItem}`;
                 appState.emails.status[idUnico] = 'virgem';
             });
-            localStorage.setItem(CHAVES[tipo].emails.status, JSON.stringify(appState.emails.status)); // Correção segura
+            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
         }
 
         campo.value = '';
@@ -1021,7 +1038,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '9.0',
+            versao: '10.0',
             cards: appState.cards,
             emails: appState.emails
         };
@@ -1040,7 +1057,7 @@
         URL.revokeObjectURL(url);
     }
 
-    /* ====== IMPORTAR / RESTAURAR (RETROCOMPATÍVEL COM QUALQUER VERSÃO ANTERIOR) ====== */
+    /* ====== IMPORTAR / RESTAURAR CORRIGIDO (CARREGA OS DADOS IMEDIATAMENTE NA TELA) ====== */
     function importarBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1050,11 +1067,9 @@
             try {
                 const data = JSON.parse(e.target.result);
                 
-                // Suporte para arquivos que venham unificados (cards/emails) ou antigos
                 const dadosCards = data.cards || data;
                 const dadosEmails = data.emails || data;
 
-                // Restaurando Cards de forma segura (pegando de qualquer versão ou padrão vazio)
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
                 const cAbertos = dadosCards.abertos || [];
@@ -1067,7 +1082,6 @@
                 localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(cOcultar));
                 if(cUltimo) localStorage.setItem(CHAVES.cards.ultimo, cUltimo);
 
-                // Restaurando Emails de forma segura
                 const eLotes = dadosEmails.lotes || [];
                 const eUsados = dadosEmails.usados || [];
                 const eAbertos = dadosEmails.abertos || [];
@@ -1088,8 +1102,29 @@
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
-                alert('✅ Backup antigo (ou atual) restaurado com sucesso! A página será atualizada.');
-                location.reload();
+                // ATUALIZA O ESTADO NA MEMÓRIA E RENDERIZA IMEDIATAMENTE (SEM FALHAS)
+                appState.cards.lotes = cLotes;
+                appState.cards.usados = cUsados;
+                appState.cards.abertos = cAbertos;
+                appState.cards.ocultar = cOcultar;
+                appState.cards.ultimo = cUltimo;
+
+                appState.emails.lotes = eLotes;
+                appState.emails.usados = eUsados;
+                appState.emails.abertos = eAbertos;
+                appState.emails.ocultar = eOcultar;
+                appState.emails.ocultarVirgens = eOcultarVirgens;
+                appState.emails.ocultarSuspensas = eOcultarSuspensas;
+                appState.emails.ocultarAssinadas = eOcultarAssinadas;
+                appState.emails.status = eStatus;
+                appState.emails.ultimo = eUltimo;
+
+                atualizarBotaoFiltroVisual('cards');
+                atualizarBotaoFiltroVisual('emails');
+                renderizarTodosLotes('cards');
+                renderizarTodosLotes('emails');
+
+                alert('✅ Backup restaurado e importado com sucesso na tela!');
             } catch (err) {
                 console.error(err);
                 alert('❌ Erro ao ler o arquivo de backup. O arquivo pode estar corrompido.');
