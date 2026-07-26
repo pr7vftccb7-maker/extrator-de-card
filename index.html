@@ -418,6 +418,10 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
+<!-- Input de arquivo universal oculto -->
+<input type="file" id="fileImportGlobal" style="display: none;" accept=".json,.txt" onchange="importarBackup(event)">
+
+<!-- VIEW 1: CARTÕES -->
 <div id="view-cards" class="view active">
     <div class="container">
         <div class="netflix-header">
@@ -437,8 +441,7 @@
             <div class="grupo-botoes-filtros">
                 <button id="btnOcultarUsadosCards" class="btn-filtro-usados" onclick="alternarFiltroCards()">Ocultar Usados</button>
                 <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
-                <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBackup(event)">
+                <button class="btn-backup" onclick="dispararSeletorArquivo()">⬆️ Restaurar</button>
             </div>
         </div>
 
@@ -446,6 +449,7 @@
     </div>
 </div>
 
+<!-- VIEW 2: EMAILS -->
 <div id="view-emails" class="view">
     <div class="container">
         <div class="netflix-header">
@@ -468,7 +472,7 @@
                 <button id="btnOcultarSuspensas" class="btn-filtro-usados" onclick="alternarFiltroEmails('suspensas')">Ocultar Suspensas</button>
                 <button id="btnOcultarAssinadas" class="btn-filtro-usados" onclick="alternarFiltroEmails('assinadas')">Ocultar Assinadas</button>
                 <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
+                <button class="btn-backup" onclick="dispararSeletorArquivo()">⬆️ Restaurar</button>
             </div>
         </div>
 
@@ -1068,6 +1072,10 @@
         URL.revokeObjectURL(url);
     }
 
+    function dispararSeletorArquivo() {
+        document.getElementById('fileImportGlobal').click();
+    }
+
     function importarBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1075,8 +1083,53 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const data = JSON.parse(e.target.result);
-                
+                const conteudo = e.target.result;
+                let data;
+
+                // Tenta interpretar como JSON
+                try {
+                    data = JSON.parse(conteudo);
+                } catch (jsonErr) {
+                    // Se não for JSON válido, trata como arquivo de texto puro (lista de cartões ou emails em linhas)
+                    const linhas = conteudo.split(/\r?\n/);
+                    const itensCards = [];
+                    let contador = 1;
+                    linhas.forEach(l => {
+                        let linhaLote = l.trim();
+                        if (!linhaLote) return;
+                        const partes = linhaLote.split(/[\s,|]+/);
+                        const numero = partes[0] ? partes[0].trim() : '';
+                        if (numero) {
+                            itensCards.push({
+                                idItem: contador++,
+                                principal: numero,
+                                secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
+                                terciario: partes[3] ? partes[3].trim() : '789',
+                                textoCompleto: linhaLote
+                            });
+                        }
+                    });
+
+                    if (itensCards.length > 0) {
+                        const novoLote = {
+                            idLote: Date.now(),
+                            nome: `Cards Importados • ${gerarDataHoraFormatada()}`,
+                            banner: BANNERS[appState.cards.lotes.length % BANNERS.length],
+                            itens: itensCards
+                        };
+                        appState.cards.lotes.unshift(novoLote);
+                        appState.cards.abertos.push(novoLote.idLote);
+                        localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(appState.cards.lotes));
+                        localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(appState.cards.abertos));
+                        renderizarTodosLotes('cards');
+                        alert(`✅ Arquivo de texto importado com ${itensCards.length} cartões!`);
+                    } else {
+                        alert('❌ O arquivo não contém cartões ou JSON válidos.');
+                    }
+                    event.target.value = '';
+                    return;
+                }
+
                 let dadosCards = {};
                 let dadosEmails = {};
 
@@ -1096,7 +1149,7 @@
 
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
-                const cAbertos = dadosCards.abertos || cLotes.map(l => l.idLote);
+                const cAbertos = dadosCards.abertos && dadosCards.abertos.length > 0 ? dadosCards.abertos : cLotes.map(l => l.idLote);
                 const cOcultar = dadosCards.ocultar !== undefined ? dadosCards.ocultar : false;
                 const cUltimo = dadosCards.ultimo || null;
 
@@ -1108,7 +1161,7 @@
 
                 const eLotes = dadosEmails.lotes || [];
                 const eUsados = dadosEmails.usados || [];
-                const eAbertos = dadosEmails.abertos || eLotes.map(l => l.idLote);
+                const eAbertos = dadosEmails.abertos && dadosEmails.abertos.length > 0 ? dadosEmails.abertos : eLotes.map(l => l.idLote);
                 const eOcultar = dadosEmails.ocultar !== undefined ? dadosEmails.ocultar : false;
                 const eOcultarVirgens = dadosEmails.ocultarVirgens !== undefined ? dadosEmails.ocultarVirgens : false;
                 const eOcultarSuspensas = dadosEmails.ocultarSuspensas !== undefined ? dadosEmails.ocultarSuspensas : false;
@@ -1150,7 +1203,7 @@
                 alert('✅ Backup importado e renderizado com sucesso!');
             } catch (err) {
                 console.error(err);
-                alert('❌ Erro ao ler o arquivo de backup.');
+                alert('❌ Erro ao processar o arquivo de importação.');
             }
             event.target.value = '';
         };
