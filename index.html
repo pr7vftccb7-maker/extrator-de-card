@@ -15,7 +15,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #141414;
             color: #ffffff;
-            /* Espaço extra no final para a barra de navegação não cobrir o conteúdo */
             padding-bottom: 80px; 
             overflow-x: hidden;
         }
@@ -25,7 +24,6 @@
             padding: 20px 15px;
         }
 
-        /* CONTROLE DAS ABAS (Telas) */
         .view {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
@@ -39,7 +37,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* HEADER BKLOGINS */
         .netflix-header {
             display: flex;
             align-items: center;
@@ -75,7 +72,6 @@
             text-transform: uppercase;
         }
 
-        /* CAMPO DE TEXTO E BOTÃO PRINCIPAL */
         .instrucoes {
             font-size: 13px;
             color: #aaa;
@@ -118,7 +114,6 @@
             transform: scale(0.99);
         }
 
-        /* BARRA DE FERRAMENTAS E PESQUISA */
         .painel-ferramentas {
             margin-top: 20px;
             display: flex;
@@ -189,7 +184,6 @@
             pointer-events: none;
         }
 
-        /* CARDS ESTILO NETFLIX */
         .card-lote {
             margin-top: 20px;
             background: #181818;
@@ -254,7 +248,6 @@
             font-weight: bold;
         }
 
-        /* CONTAINER DE BOTÕES NO CABEÇALHO DO LOTE */
         .grupo-botoes-cabecalho {
             display: flex;
             gap: 6px;
@@ -381,7 +374,6 @@
             display: none !important;
         }
 
-        /* BOTTOM NAV BAR */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -426,7 +418,6 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<!-- VIEW 1: CARTÕES -->
 <div id="view-cards" class="view active">
     <div class="container">
         <div class="netflix-header">
@@ -455,7 +446,6 @@
     </div>
 </div>
 
-<!-- VIEW 2: EMAILS -->
 <div id="view-emails" class="view">
     <div class="container">
         <div class="netflix-header">
@@ -486,7 +476,6 @@
     </div>
 </div>
 
-<!-- NAVEGAÇÃO RODAPÉ -->
 <nav class="bottom-nav">
     <button class="nav-item active" id="nav-btn-cards" onclick="mudarAba('cards')">
         <i>💳</i>
@@ -499,7 +488,6 @@
 </nav>
 
 <script>
-    // Usamos as chaves fixas genéricas 'lotes_cartoes_geral' e 'lotes_emails_geral' para garantircompatibilidade universal com backups antigos e novos
     const CHAVES = {
         scroll: 'posicao_scroll_v10',
         cards: {
@@ -634,11 +622,33 @@
 
     function adicionarLote(tipo) {
         const campo = document.getElementById(tipo === 'cards' ? 'entradaDadosCards' : 'entradaDadosEmails');
-        const texto = campo.value.trim();
+        let texto = campo.value.trim();
 
         if (!texto) {
             alert('Cole uma lista antes de importar.');
             return;
+        }
+
+        if (texto.startsWith('{') || texto.startsWith('[')) {
+            try {
+                const parsedJson = JSON.parse(texto);
+                if (parsedJson.lotes && Array.isArray(parsedJson.lotes)) {
+                    parsedJson.lotes.forEach(loteImportado => {
+                        appState[tipo].lotes.unshift(loteImportado);
+                        if (loteImportado.itens) {
+                            loteImportado.itens.forEach(item => {
+                                appState[tipo].abertos.push(loteImportado.idLote);
+                            });
+                        }
+                    });
+                    localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+                    localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
+                    renderizarTodosLotes(tipo);
+                    campo.value = '';
+                    mostrarStatus('Lotes importados via texto com sucesso!');
+                    return;
+                }
+            } catch (err) {}
         }
 
         const linhas = texto.split(/\r?\n/);
@@ -646,18 +656,22 @@
         let contador = 1;
 
         linhas.forEach(linha => {
-            const l = linha.trim();
+            let l = linha.trim();
+            if (!l) return;
+
+            l = l.replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
             if (!l) return;
 
             if (tipo === 'cards') {
-                const partes = l.split('|');
+                const partes = l.split(/[\s,|]+/);
                 const numero = partes[0] ? partes[0].trim() : '';
                 if (!numero) return;
+                
                 itens.push({
                     idItem: contador++,
                     principal: numero,
-                    secundario: (partes[1] || partes[2]) ? `${partes[1]||'-'}/${partes[2]||'-'}` : '-',
-                    terciario: partes[3] ? partes[3].trim() : '-',
+                    secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
+                    terciario: partes[3] ? partes[3].trim() : '789',
                     textoCompleto: l
                 });
             } else {
@@ -739,7 +753,7 @@
         });
 
         if (itensAssinadosParaCopiar.length === 0) {
-            alert('⚠️ Nenhuma conta "assinada" nova (não copiada anteriormente) encontrada neste lote.');
+            alert('⚠️ Nenhuma conta "assinada" nova encontrada neste lote.');
             return;
         }
 
@@ -796,11 +810,8 @@
             localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(appState.emails.abertos));
 
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${itensAssinadosParaCopiar.length} contas adicionadas ao card único de Assinadas Usadas!`);
-        }).catch(err => {
-            console.error('Erro ao copiar em massa: ', err);
-            alert('❌ Erro ao acessar a área de transferência.');
-        });
+            mostrarStatus(`✅ Contas adicionadas às Assinadas Usadas!`);
+        }).catch(err => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
     function alternarFiltroCards() {
@@ -1057,7 +1068,6 @@
         URL.revokeObjectURL(url);
     }
 
-    /* ====== IMPORTAR / RESTAURAR CORRIGIDO (CARREGA OS DADOS IMEDIATAMENTE NA TELA) ====== */
     function importarBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1067,12 +1077,26 @@
             try {
                 const data = JSON.parse(e.target.result);
                 
-                const dadosCards = data.cards || data;
-                const dadosEmails = data.emails || data;
+                let dadosCards = {};
+                let dadosEmails = {};
+
+                if (data.cards) {
+                    dadosCards = data.cards;
+                } else if (data.lotes && Array.isArray(data.lotes)) {
+                    dadosCards = { lotes: data.lotes, usados: data.usados || [], abertos: data.abertos || [] };
+                } else if (Array.isArray(data)) {
+                    dadosCards = { lotes: data, usados: [], abertos: [] };
+                } else {
+                    dadosCards = data;
+                }
+
+                if (data.emails) {
+                    dadosEmails = data.emails;
+                }
 
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
-                const cAbertos = dadosCards.abertos || [];
+                const cAbertos = dadosCards.abertos || cLotes.map(l => l.idLote);
                 const cOcultar = dadosCards.ocultar !== undefined ? dadosCards.ocultar : false;
                 const cUltimo = dadosCards.ultimo || null;
 
@@ -1084,7 +1108,7 @@
 
                 const eLotes = dadosEmails.lotes || [];
                 const eUsados = dadosEmails.usados || [];
-                const eAbertos = dadosEmails.abertos || [];
+                const eAbertos = dadosEmails.abertos || eLotes.map(l => l.idLote);
                 const eOcultar = dadosEmails.ocultar !== undefined ? dadosEmails.ocultar : false;
                 const eOcultarVirgens = dadosEmails.ocultarVirgens !== undefined ? dadosEmails.ocultarVirgens : false;
                 const eOcultarSuspensas = dadosEmails.ocultarSuspensas !== undefined ? dadosEmails.ocultarSuspensas : false;
@@ -1102,7 +1126,6 @@
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
-                // ATUALIZA O ESTADO NA MEMÓRIA E RENDERIZA IMEDIATAMENTE (SEM FALHAS)
                 appState.cards.lotes = cLotes;
                 appState.cards.usados = cUsados;
                 appState.cards.abertos = cAbertos;
@@ -1124,10 +1147,10 @@
                 renderizarTodosLotes('cards');
                 renderizarTodosLotes('emails');
 
-                alert('✅ Backup restaurado e importado com sucesso na tela!');
+                alert('✅ Backup importado e renderizado com sucesso!');
             } catch (err) {
                 console.error(err);
-                alert('❌ Erro ao ler o arquivo de backup. O arquivo pode estar corrompido.');
+                alert('❌ Erro ao ler o arquivo de backup.');
             }
             event.target.value = '';
         };
