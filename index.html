@@ -2,41 +2,23 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>bklogins - Extrator PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bklogins - Extrator de Cartões</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            -webkit-tap-highlight-color: transparent;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px 15px;
             background-color: #141414;
             color: #ffffff;
-            /* Espaço extra no final para a barra de navegação não cobrir o conteúdo */
-            padding-bottom: 80px; 
-            overflow-x: hidden;
         }
         .container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 20px 15px;
-        }
-
-        /* CONTROLE DAS ABAS (Telas) */
-        .view {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        .view.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         /* HEADER BKLOGINS */
@@ -128,19 +110,18 @@
         }
         .grupo-botoes-filtros {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
             width: 100%;
         }
         .btn-filtro-usados, .btn-backup {
-            flex: 1 1 30%;
-            min-width: 90px;
-            padding: 10px 8px;
+            flex: 1;
+            padding: 12px 18px;
             background-color: #2b2b2b;
             color: white;
             border: 1px solid #444;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -179,7 +160,7 @@
             pointer-events: none;
         }
 
-        /* CARDS ESTILO NETFLIX */
+        /* CARDS ESTILO NETFLIX (COM BANNERS TOP 20) */
         .card-lote {
             margin-top: 20px;
             background: #181818;
@@ -244,18 +225,11 @@
             font-weight: bold;
         }
 
-        /* CONTAINER DE BOTÕES NO CABEÇALHO DO LOTE */
-        .grupo-botoes-cabecalho {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .btn-acao-lote {
+        .btn-excluir-lote {
             background: rgba(255, 255, 255, 0.15);
             color: #fff;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 5px 8px;
+            padding: 5px 10px;
             border-radius: 4px;
             font-size: 11px;
             font-weight: 600;
@@ -263,17 +237,9 @@
             backdrop-filter: blur(5px);
             transition: background 0.2s;
         }
-        .btn-acao-lote:hover {
+        .btn-excluir-lote:hover {
             background: #E50914;
             border-color: #E50914;
-        }
-        .btn-copiar-lote {
-            background: rgba(52, 199, 89, 0.3);
-            border-color: rgba(52, 199, 89, 0.5);
-        }
-        .btn-copiar-lote:hover {
-            background: #34c759;
-            border-color: #34c759;
         }
 
         .conteudo-lote {
@@ -291,7 +257,7 @@
             font-size: 13px;
         }
         th, td {
-            padding: 12px 8px;
+            padding: 12px 12px;
             border-bottom: 1px solid #282828;
             white-space: nowrap;
         }
@@ -307,14 +273,16 @@
             background-color: #E50914;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 5px 12px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 11px;
             font-weight: 700;
+            margin-left: 8px;
             transition: all 0.2s;
         }
         
+        /* ESTILOS DE STATUS DOS BOTÕES */
         .btn-copiar.usado {
             background-color: #333 !important;
             color: #777 !important;
@@ -322,7 +290,7 @@
             cursor: default;
         }
         .btn-copiar.ultimo-copiado {
-            background-color: #34c759 !important;
+            background-color: #34c759 !important; /* Verde estilo iOS */
             color: #ffffff !important;
             font-weight: bold;
             box-shadow: 0 0 10px rgba(52, 199, 89, 0.3);
@@ -343,72 +311,13 @@
             letter-spacing: 0.5px;
             color: #fff;
         }
-        .email-text {
-            font-size: 13px;
-            color: #ddd;
-        }
-
-        .status-select {
-            background-color: #2b2b2b;
-            color: #fff;
-            border: 1px solid #444;
-            border-radius: 4px;
-            padding: 4px 6px;
-            font-size: 11px;
-            font-weight: 600;
-            outline: none;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-        .status-select:focus {
-            border-color: #E50914;
-        }
 
         .card-lote:not(.aberto) tr.linha-secundaria {
             display: none !important;
         }
+
         tr.linha-oculta {
             display: none !important;
-        }
-
-        /* BOTTOM NAV BAR */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: rgba(20, 20, 20, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-top: 1px solid #333;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 15px 0;
-            z-index: 1000;
-        }
-
-        .nav-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #888;
-            background: transparent;
-            border: none;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 4px;
-        }
-
-        .nav-item.active {
-            color: #E50914;
         }
     </style>
 </head>
@@ -416,193 +325,97 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<!-- VIEW 1: CARTÕES -->
-<div id="view-cards" class="view active">
-    <div class="container">
-        <div class="netflix-header">
-            <div class="logo-bklogins">bklogins</div>
-            <div class="badge-sub">CARDS PRO</div>
-        </div>
-
-        <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
-        <textarea id="entradaDadosCards" placeholder="Cole seus cartões aqui..."></textarea>
-        <button class="btn-processar" onclick="adicionarLote('cards')">Importar Cartões</button>
-
-        <div class="painel-ferramentas">
-            <input type="text" id="campoPesquisaCards" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)..." oninput="filtrarItens('cards')">
-            <div class="grupo-botoes-filtros">
-                <button id="btnOcultarUsadosCards" class="btn-filtro-usados" onclick="alternarFiltroCards()">Ocultar Usados</button>
-                <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
-                <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBackup(event)">
-            </div>
-        </div>
-
-        <div id="areaLotesCards"></div>
+<div class="container">
+    <div class="netflix-header">
+        <div class="logo-bklogins">bklogins</div>
+        <div class="badge-sub">EXTRATOR PRO</div>
     </div>
-</div>
 
-<!-- VIEW 2: EMAILS -->
-<div id="view-emails" class="view">
-    <div class="container">
-        <div class="netflix-header">
-            <div class="logo-bklogins">bklogins</div>
-            <div class="badge-sub">EMAILS PRO</div>
+    <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
+    
+    <textarea id="entradaDados" placeholder="Cole seus dados aqui..."></textarea>
+    
+    <button class="btn-processar" onclick="adicionarLote()">Importar e Gerar Tabela</button>
+
+    <div class="painel-ferramentas">
+        <input type="text" id="campoPesquisa" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)..." oninput="filtrarCartoes()">
+        <div class="grupo-botoes-filtros">
+            <button id="btnOcultarUsados" class="btn-filtro-usados" onclick="alternarOcultarUsados()">Ocultar Usados</button>
+            <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
+            <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
+            <input type="file" id="fileImport" style="display: none;" accept=".json" onchange="importarBackup(event)">
         </div>
-
-        <p class="instrucoes">Cole a lista no formato <code>EMAIL:SENHA</code> ou <code>EMAIL|SENHA</code>:</p>
-        <textarea id="entradaDadosEmails" placeholder="Cole seus emails/logins aqui..."></textarea>
-        <button class="btn-processar" onclick="adicionarLote('emails')">Importar Emails</button>
-
-        <div class="painel-ferramentas">
-            <input type="text" id="campoPesquisaEmails" class="input-pesquisa" placeholder="🔍 Buscar por email..." oninput="filtrarItens('emails')">
-            <div class="grupo-botoes-filtros">
-                <button id="btnOcultarUsadosEmails" class="btn-filtro-usados" onclick="alternarFiltroEmails('usados')">Ocultar Usados</button>
-                <button id="btnOcultarVirgens" class="btn-filtro-usados" onclick="alternarFiltroEmails('virgens')">Ocultar Virgens</button>
-                <button id="btnOcultarSuspensas" class="btn-filtro-usados" onclick="alternarFiltroEmails('suspensas')">Ocultar Suspensas</button>
-                <button id="btnOcultarAssinadas" class="btn-filtro-usados" onclick="alternarFiltroEmails('assinadas')">Ocultar Assinadas</button>
-                <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="document.getElementById('fileImport').click()">⬆️ Restaurar</button>
-            </div>
-        </div>
-
-        <div id="areaLotesEmails"></div>
     </div>
-</div>
 
-<!-- NAVEGAÇÃO RODAPÉ -->
-<nav class="bottom-nav">
-    <button class="nav-item active" id="nav-btn-cards" onclick="mudarAba('cards')">
-        <i>💳</i>
-        <span>Cartões</span>
-    </button>
-    <button class="nav-item" id="nav-btn-emails" onclick="mudarAba('emails')">
-        <i>📧</i>
-        <span>Emails</span>
-    </button>
-</nav>
+    <div id="areaLotes"></div>
+</div>
 
 <script>
-    const CHAVES = {
-        scroll: 'posicao_scroll_v8',
-        cards: {
-            lotes: 'lotes_cartoes_v8',
-            usados: 'botoes_usados_cartoes_v8',
-            abertos: 'lotes_abertos_cartoes_v8',
-            ocultar: 'filtro_ocultar_cartoes_v8',
-            ultimo: 'ultimo_copiado_cartoes_v8'
-        },
-        emails: {
-            lotes: 'lotes_emails_v8',
-            usados: 'botoes_usados_emails_v8',
-            abertos: 'lotes_abertos_emails_v8',
-            ocultar: 'filtro_ocultar_emails_v8',
-            ocultarVirgens: 'filtro_ocultar_virgens_v8',
-            ocultarSuspensas: 'filtro_ocultar_suspensas_v8',
-            ocultarAssinadas: 'filtro_ocultar_assinadas_v8',
-            status: 'status_emails_v8',
-            ultimo: 'ultimo_copiado_emails_v8'
-        },
-        abaAtiva: 'aba_ativa_v8'
-    };
+    const CHAVE_SCROLL = 'posicao_scroll_lotes_cc';
+    const CHAVE_LOTES = 'lotes_cartoes_salvos';
+    const CHAVE_USADOS = 'botoes_usados_lotes_cc';
+    const CHAVE_ABERTOS = 'lotes_abertos_salvos';
+    const CHAVE_OCULTAR_USADOS = 'filtro_ocultar_usados';
+    const CHAVE_ULTIMO_COPIADO = 'ultimo_copiado_cc';
 
-    const BANNERS = [
-        'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80',
-        'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80'
+    // TOP 20 SÉRIES POPULARES NETFLIX
+    const TOP_20_SERIES = [
+        { nome: "Stranger Things", url: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Round 6 (Squid Game)", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Wandinha (Wednesday)", url: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80" },
+        { nome: "La Casa de Papel", url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80" },
+        { nome: "The Witcher", url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Bridgerton", url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&auto=format&fit=crop&q=80" },
+        { nome: "O Gambito da Rainha", url: "https://images.unsplash.com/photo-1586165368502-1bad197a6461?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Dark", url: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Peaky Blinders", url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Black Mirror", url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Lupin", url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Sex Education", url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80" },
+        { nome: "The Crown", url: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&auto=format&fit=crop&q=80" },
+        { nome: "You", url: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Cobra Kai", url: "https://images.unsplash.com/photo-1555597673-b21d5c935865?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Narcos", url: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Emily em Paris", url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Mindhunter", url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Elite", url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80" },
+        { nome: "Ozark", url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80" }
     ];
 
-    let appState = {
-        cards: {
-            lotes: JSON.parse(localStorage.getItem(CHAVES.cards.lotes) || '[]'),
-            usados: JSON.parse(localStorage.getItem(CHAVES.cards.usados) || '[]'),
-            abertos: JSON.parse(localStorage.getItem(CHAVES.cards.abertos) || '[]'),
-            ocultar: JSON.parse(localStorage.getItem(CHAVES.cards.ocultar) || 'false'),
-            ultimo: localStorage.getItem(CHAVES.cards.ultimo) || null
-        },
-        emails: {
-            lotes: JSON.parse(localStorage.getItem(CHAVES.emails.lotes) || '[]'),
-            usados: JSON.parse(localStorage.getItem(CHAVES.emails.usados) || '[]'),
-            abertos: JSON.parse(localStorage.getItem(CHAVES.emails.abertos) || '[]'),
-            ocultar: JSON.parse(localStorage.getItem(CHAVES.emails.ocultar) || 'false'),
-            ocultarVirgens: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarVirgens) || 'false'),
-            ocultarSuspensas: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarSuspensas) || 'false'),
-            ocultarAssinadas: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarAssinadas) || 'false'),
-            status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
-            ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null
-        },
-        abaAtiva: localStorage.getItem(CHAVES.abaAtiva) || 'cards'
-    };
+    let lotesSalvos = JSON.parse(localStorage.getItem(CHAVE_LOTES) || '[]');
+    let botoesUsados = JSON.parse(localStorage.getItem(CHAVE_USADOS) || '[]');
+    let lotesAbertos = JSON.parse(localStorage.getItem(CHAVE_ABERTOS) || '[]');
+    let ocultarUsadosAtivo = JSON.parse(localStorage.getItem(CHAVE_OCULTAR_USADOS) || 'false');
+    let ultimoCopiadoId = localStorage.getItem(CHAVE_ULTIMO_COPIADO) || null;
 
     window.addEventListener('DOMContentLoaded', () => {
-        mudarAba(appState.abaAtiva, false);
-        atualizarBotaoFiltroVisual('cards');
-        atualizarBotaoFiltroVisual('emails');
-        renderizarTodosLotes('cards');
-        renderizarTodosLotes('emails');
+        atualizarBotaoFiltroVisual();
+        renderizarTodosLotes();
 
-        const posicaoSalva = localStorage.getItem(CHAVES.scroll);
+        const posicaoSalva = localStorage.getItem(CHAVE_SCROLL);
         if (posicaoSalva !== null) {
-            setTimeout(() => { window.scrollTo(0, parseInt(posicaoSalva, 10)); }, 100);
+            setTimeout(() => {
+                window.scrollTo(0, parseInt(posicaoSalva, 10));
+                mostrarStatus('Posição restaurada!');
+            }, 100);
         }
     });
 
-    function mudarAba(aba, resetScroll = true) {
-        appState.abaAtiva = aba;
-        localStorage.setItem(CHAVES.abaAtiva, aba);
-
-        document.getElementById('view-cards').classList.remove('active');
-        document.getElementById('view-emails').classList.remove('active');
-        document.getElementById(`view-${aba}`).classList.add('active');
-
-        document.getElementById('nav-btn-cards').classList.remove('active');
-        document.getElementById('nav-btn-emails').classList.remove('active');
-        document.getElementById(`nav-btn-${aba}`).classList.add('active');
-
-        if(resetScroll) window.scrollTo(0, 0);
-    }
-
-    let touchstartX = 0;
-    let touchstartY = 0;
-    let touchendX = 0;
-    let touchendY = 0;
-
-    document.addEventListener('touchstart', e => {
-        touchstartX = e.changedTouches[0].screenX;
-        touchstartY = e.changedTouches[0].screenY;
+    window.addEventListener('scroll', () => {
+        localStorage.setItem(CHAVE_SCROLL, window.scrollY);
     });
 
-    document.addEventListener('touchend', e => {
-        touchendX = e.changedTouches[0].screenX;
-        touchendY = e.changedTouches[0].screenY;
-        verificarDeslize();
-    });
-
-    function verificarDeslize() {
-        const diffX = touchendX - touchstartX;
-        const diffY = touchendY - touchstartY;
-
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 70) {
-            if (diffX < 0 && appState.abaAtiva === 'cards') {
-                mudarAba('emails');
-            } else if (diffX > 0 && appState.abaAtiva === 'emails') {
-                mudarAba('cards');
-            }
-        }
-    }
-
-    window.addEventListener('scroll', () => { localStorage.setItem(CHAVES.scroll, window.scrollY); });
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') localStorage.setItem(CHAVES.scroll, window.scrollY);
+        if (document.visibilityState === 'hidden') {
+            localStorage.setItem(CHAVE_SCROLL, window.scrollY);
+        }
     });
 
     function mostrarStatus(mensagem) {
         const el = document.getElementById('statusScroll');
         el.innerText = mensagem;
         el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 2000);
+        setTimeout(() => { el.style.display = 'none'; }, 2500);
     }
 
     function gerarDataHoraFormatada() {
@@ -610,280 +423,134 @@
         const dia = String(agora.getDate()).padStart(2, '0');
         const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
         const mes = meses[agora.getMonth()];
+        const ano = agora.getFullYear();
         const horas = String(agora.getHours()).padStart(2, '0');
         const minutos = String(agora.getMinutes()).padStart(2, '0');
-        return `${dia} ${mes} • ${horas}:${minutos}`;
+
+        return `${dia}${mes}${ano}/${horas}:${minutos}`;
     }
 
-    function adicionarLote(tipo) {
-        const campo = document.getElementById(tipo === 'cards' ? 'entradaDadosCards' : 'entradaDadosEmails');
-        const texto = campo.value.trim();
+    function adicionarLote() {
+        const campoTexto = document.getElementById('entradaDados');
+        const texto = campoTexto.value.trim();
 
         if (!texto) {
-            alert('Cole uma lista antes de importar.');
+            alert('Cole uma lista de cartões antes de importar.');
             return;
         }
 
         const linhas = texto.split(/\r?\n/);
-        const itens = [];
+        const cartoes = [];
         let contador = 1;
 
         linhas.forEach(linha => {
             const l = linha.trim();
             if (!l) return;
 
-            if (tipo === 'cards') {
-                const partes = l.split('|');
-                const numero = partes[0] ? partes[0].trim() : '';
-                if (!numero) return;
-                itens.push({
-                    idItem: contador++,
-                    principal: numero,
-                    secundario: (partes[1] || partes[2]) ? `${partes[1]||'-'}/${partes[2]||'-'}` : '-',
-                    terciario: partes[3] ? partes[3].trim() : '-',
-                    textoCompleto: l
-                });
-            } else {
-                let delimitador = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
-                const partes = l.split(delimitador);
-                const email = partes[0] ? partes[0].trim() : '';
-                if (!email) return;
-                itens.push({
-                    idItem: contador++,
-                    principal: email,
-                    secundario: partes[1] ? partes[1].trim() : '-',
-                    terciario: '',
-                    textoCompleto: l
-                });
-            }
+            const partes = l.split('|');
+            const numero = partes[0] ? partes[0].trim() : '';
+            if (!numero) return;
+
+            const mes = partes[1] ? partes[1].trim() : '';
+            const ano = partes[2] ? partes[2].trim() : '';
+            const cvv = partes[3] ? partes[3].trim() : '-';
+            const validade = (mes || ano) ? `${mes}/${ano}` : '-';
+
+            cartoes.push({
+                idItem: contador++,
+                numero: numero,
+                validade: validade,
+                cvv: cvv
+            });
         });
 
-        if (itens.length === 0) {
-            alert('Nenhum dado válido foi identificado.');
+        if (cartoes.length === 0) {
+            alert('Nenhum cartão válido foi identificado.');
             return;
         }
 
-        const bannerImg = BANNERS[appState[tipo].lotes.length % BANNERS.length];
+        const indiceSerie = lotesSalvos.length % TOP_20_SERIES.length;
+        const serieSelecionada = TOP_20_SERIES[indiceSerie];
+
+        const idLoteNovo = Date.now();
         const novoLote = {
-            idLote: Date.now(),
-            nome: `${tipo === 'cards' ? 'Cards' : 'Logins'} • ${gerarDataHoraFormatada()}`,
-            banner: bannerImg,
-            itens: itens
+            idLote: idLoteNovo,
+            nome: `${serieSelecionada.nome} • ${gerarDataHoraFormatada()}`,
+            banner: serieSelecionada.url,
+            cartoes: cartoes
         };
 
-        appState[tipo].lotes.unshift(novoLote);
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-        
-        if (tipo === 'emails') {
-            itens.forEach(item => {
-                const idUnico = `item_emails_${novoLote.idLote}_${item.idItem}`;
-                appState.emails.status[idUnico] = 'virgem';
-            });
-            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
+        lotesSalvos.unshift(novoLote);
+        localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+
+        campoTexto.value = '';
+        renderizarTodosLotes();
+    }
+
+    function alternarLote(idLote) {
+        const index = lotesAbertos.indexOf(idLote);
+        if (index > -1) {
+            lotesAbertos.splice(index, 1);
+        } else {
+            lotesAbertos.push(idLote);
         }
-
-        campo.value = '';
-        renderizarTodosLotes(tipo);
-        mostrarStatus(`Importado com sucesso!`);
-    }
-
-    function alternarLote(tipo, idLote) {
-        const index = appState[tipo].abertos.indexOf(idLote);
-        if (index > -1) appState[tipo].abertos.splice(index, 1);
-        else appState[tipo].abertos.push(idLote);
+        localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
         
-        localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
-        const elemento = document.getElementById(`lote_${tipo}_${idLote}`);
-        if (elemento) elemento.classList.toggle('aberto');
+        const elemento = document.getElementById(`lote_${idLote}`);
+        if (elemento) {
+            elemento.classList.toggle('aberto');
+        }
     }
 
-    function excluirLote(event, tipo, idLote) {
+    function excluirLote(event, idLote) {
         event.stopPropagation();
         if (confirm('Deseja apagar esta extração?')) {
-            appState[tipo].lotes = appState[tipo].lotes.filter(l => l.idLote !== idLote);
-            appState[tipo].abertos = appState[tipo].abertos.filter(id => id !== idLote);
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-            localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
-            renderizarTodosLotes(tipo);
+            lotesSalvos = lotesSalvos.filter(l => l.idLote !== idLote);
+            lotesAbertos = lotesAbertos.filter(id => id !== idLote);
+            localStorage.setItem(CHAVE_LOTES, JSON.stringify(lotesSalvos));
+            localStorage.setItem(CHAVE_ABERTOS, JSON.stringify(lotesAbertos));
+            renderizarTodosLotes();
         }
     }
 
-    // COPIA AS ASSINADAS E ADICIONA NO ÚNICO CARD "ASSINADAS USADAS" (OU CRIA APENAS SE NENHUM EXISTIR)
-    function copiarAssinadasDoLote(event, idLote) {
-        event.stopPropagation();
-
-        const lote = appState.emails.lotes.find(l => l.idLote === idLote);
-        if (!lote) return;
-
-        // Filtra apenas contas marcadas como "assinada" e que AINDA NÃO FORAM COPIADAS anteriormente
-        const itensAssinadosParaCopiar = lote.itens.filter(item => {
-            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const statusAtual = appState.emails.status[idUnico] || '';
-            const jaFoiCopiadoAssinada = appState.emails.usados.includes(idUnico);
-            return statusAtual === 'assinada' && !jaFoiCopiadoAssinada;
-        });
-
-        if (itensAssinadosParaCopiar.length === 0) {
-            alert('⚠️ Nenhuma conta "assinada" nova (não copiada anteriormente) encontrada neste lote.');
-            return;
-        }
-
-        // Monta o texto para a área de transferência
-        let textoParaClipboard = '';
-        itensAssinadosParaCopiar.forEach(item => {
-            textoParaClipboard += item.textoCompleto + '\n';
-            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            if (!appState.emails.usados.includes(idUnico)) {
-                appState.emails.usados.push(idUnico);
-            }
-        });
-
-        navigator.clipboard.writeText(textoParaClipboard.trim()).then(() => {
-            localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
-
-            // PROCURA SE JÁ EXISTE UM CARD ÚNICO "ASSINADAS USADAS"
-            let loteUnicoAssinadas = appState.emails.lotes.find(l => l.nome.startsWith('ASSINADAS USADAS'));
-
-            if (loteUnicoAssinadas) {
-                // Se já existe, apenas adiciona os novos itens ao final dele
-                let proximoId = loteUnicoAssinadas.itens.length + 1;
-                itensAssinadosParaCopiar.forEach(item => {
-                    loteUnicoAssinadas.itens.push({
-                        idItem: proximoId++,
-                        principal: item.principal,
-                        secundario: item.secundario,
-                        terciario: '',
-                        textoCompleto: item.textoCompleto
-                    });
-                });
-            } else {
-                // Se não existe, cria o ÚNICO card de Assinadas Usadas
-                const itensNovosLote = itensAssinadosParaCopiar.map((item, idx) => ({
-                    idItem: idx + 1,
-                    principal: item.principal,
-                    secundario: item.secundario,
-                    terciario: '',
-                    textoCompleto: item.textoCompleto
-                }));
-
-                const bannerImg = BANNERS[appState.emails.lotes.length % BANNERS.length];
-                loteUnicoAssinadas = {
-                    idLote: Date.now(),
-                    nome: `ASSINADAS USADAS`,
-                    banner: bannerImg,
-                    itens: itensNovosLote
-                };
-
-                appState.emails.lotes.unshift(loteUnicoAssinadas);
-            }
-
-            // Garante que o card único de usadas esteja aberto para o usuário ver
-            if (!appState.emails.abertos.includes(loteUnicoAssinadas.idLote)) {
-                appState.emails.abertos.push(loteUnicoAssinadas.idLote);
-            }
-
-            localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
-            localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(appState.emails.abertos));
-
-            renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${itensAssinadosParaCopiar.length} contas adicionadas ao card único de Assinadas Usadas!`);
-        }).catch(err => {
-            console.error('Erro ao copiar em massa: ', err);
-            alert('❌ Erro ao acessar a área de transferência.');
-        });
+    function alternarOcultarUsados() {
+        ocultarUsadosAtivo = !ocultarUsadosAtivo;
+        localStorage.setItem(CHAVE_OCULTAR_USADOS, JSON.stringify(ocultarUsadosAtivo));
+        atualizarBotaoFiltroVisual();
+        filtrarCartoes();
     }
 
-    function alternarFiltroCards() {
-        appState.cards.ocultar = !appState.cards.ocultar;
-        localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(appState.cards.ocultar));
-        atualizarBotaoFiltroVisual('cards');
-        filtrarItens('cards');
-    }
-
-    function alternarFiltroEmails(filtro) {
-        if (filtro === 'usados') {
-            appState.emails.ocultar = !appState.emails.ocultar;
-            localStorage.setItem(CHAVES.emails.ocultar, JSON.stringify(appState.emails.ocultar));
-        } else if (filtro === 'virgens') {
-            appState.emails.ocultarVirgens = !appState.emails.ocultarVirgens;
-            localStorage.setItem(CHAVES.emails.ocultarVirgens, JSON.stringify(appState.emails.ocultarVirgens));
-        } else if (filtro === 'suspensas') {
-            appState.emails.ocultarSuspensas = !appState.emails.ocultarSuspensas;
-            localStorage.setItem(CHAVES.emails.ocultarSuspensas, JSON.stringify(appState.emails.ocultarSuspensas));
-        } else if (filtro === 'assinadas') {
-            appState.emails.ocultarAssinadas = !appState.emails.ocultarAssinadas;
-            localStorage.setItem(CHAVES.emails.ocultarAssinadas, JSON.stringify(appState.emails.ocultarAssinadas));
-        }
-        atualizarBotaoFiltroVisual('emails');
-        filtrarItens('emails');
-    }
-
-    function atualizarBotaoFiltroVisual(tipo) {
-        if (tipo === 'cards') {
-            const btn = document.getElementById('btnOcultarUsadosCards');
-            if (appState.cards.ocultar) {
-                btn.innerText = 'Mostrar Usados'; btn.classList.add('ativo');
-            } else {
-                btn.innerText = 'Ocultar Usados'; btn.classList.remove('ativo');
-            }
+    function atualizarBotaoFiltroVisual() {
+        const btn = document.getElementById('btnOcultarUsados');
+        if (ocultarUsadosAtivo) {
+            btn.innerText = 'Mostrar Usados';
+            btn.classList.add('ativo');
         } else {
-            const btnU = document.getElementById('btnOcultarUsadosEmails');
-            const btnV = document.getElementById('btnOcultarVirgens');
-            const btnS = document.getElementById('btnOcultarSuspensas');
-            const btnA = document.getElementById('btnOcultarAssinadas');
-
-            if (appState.emails.ocultar) { btnU.innerText = 'Mostrar Usados'; btnU.classList.add('ativo'); } 
-            else { btnU.innerText = 'Ocultar Usados'; btnU.classList.remove('ativo'); }
-
-            if (appState.emails.ocultarVirgens) { btnV.innerText = 'Mostrar Virgens'; btnV.classList.add('ativo'); } 
-            else { btnV.innerText = 'Ocultar Virgens'; btnV.classList.remove('ativo'); }
-
-            if (appState.emails.ocultarSuspensas) { btnS.innerText = 'Mostrar Suspensas'; btnS.classList.add('ativo'); } 
-            else { btnS.innerText = 'Ocultar Suspensas'; btnS.classList.remove('ativo'); }
-
-            if (appState.emails.ocultarAssinadas) { btnA.innerText = 'Mostrar Assinadas'; btnA.classList.add('ativo'); } 
-            else { btnA.innerText = 'Ocultar Assinadas'; btnA.classList.remove('ativo'); }
+            btn.innerText = 'Ocultar Usados';
+            btn.classList.remove('ativo');
         }
     }
 
-    function mudarStatusItemEmail(idUnico, novoStatus) {
-        appState.emails.status[idUnico] = novoStatus;
-        localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
-        filtrarItens('emails');
-    }
+    function filtrarCartoes() {
+        const termo = document.getElementById('campoPesquisa').value.trim().toLowerCase();
 
-    function filtrarItens(tipo) {
-        const campoId = tipo === 'cards' ? 'campoPesquisaCards' : 'campoPesquisaEmails';
-        const termo = document.getElementById(campoId).value.trim().toLowerCase();
-
-        appState[tipo].lotes.forEach(lote => {
-            const cardElemento = document.getElementById(`lote_${tipo}_${lote.idLote}`);
+        lotesSalvos.forEach(lote => {
+            const cardElemento = document.getElementById(`lote_${lote.idLote}`);
             if (!cardElemento) return;
 
             let linhasVisiveisNoLote = 0;
 
-            lote.itens.forEach(item => {
-                const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
-                const jaFoiUsado = appState[tipo].usados.includes(idUnico);
+            lote.cartoes.forEach(c => {
+                const idUnico = `cc_${lote.idLote}_${c.numero}`;
+                const jaFoiUsado = botoesUsados.includes(idUnico);
                 const trElemento = document.getElementById(`tr_${idUnico}`);
 
                 if (!trElemento) return;
 
-                const atendePesquisa = termo === '' || item.principal.toLowerCase().includes(termo);
-                
-                let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado;
-                let atendeFiltroVirgens = true;
-                let atendeFiltroSuspensas = true;
-                let atendeFiltroAssinadas = true;
+                const atendePesquisa = termo === '' || c.numero.toLowerCase().includes(termo);
+                const atendeFiltroUsado = !ocultarUsadosAtivo || !jaFoiUsado;
 
-                if (tipo === 'emails') {
-                    const statusAtual = appState.emails.status[idUnico] || '';
-                    if (appState.emails.ocultarVirgens && statusAtual === 'virgem') atendeFiltroVirgens = false;
-                    if (appState.emails.ocultarSuspensas && statusAtual === 'suspensa') atendeFiltroSuspensas = false;
-                    if (appState.emails.ocultarAssinadas && statusAtual === 'assinada') atendeFiltroAssinadas = false;
-                }
-
-                if (atendePesquisa && atendeFiltroUsado && atendeFiltroVirgens && atendeFiltroSuspensas && atendeFiltroAssinadas) {
+                if (atendePesquisa && atendeFiltroUsado) {
                     trElemento.classList.remove('linha-oculta');
                     linhasVisiveisNoLote++;
                 } else {
@@ -891,9 +558,11 @@
                 }
             });
 
-            if (termo !== '' && linhasVisiveisNoLote > 0) cardElemento.classList.add('aberto');
+            if (termo !== '' && linhasVisiveisNoLote > 0) {
+                cardElemento.classList.add('aberto');
+            }
 
-            if (linhasVisiveisNoLote === 0 && (termo !== '' || appState[tipo].ocultar || (tipo==='emails' && (appState.emails.ocultarVirgens || appState.emails.ocultarSuspensas || appState.emails.ocultarAssinadas)))) {
+            if (linhasVisiveisNoLote === 0 && (termo !== '' || ocultarUsadosAtivo)) {
                 cardElemento.style.display = 'none';
             } else {
                 cardElemento.style.display = 'block';
@@ -901,137 +570,135 @@
         });
     }
 
-    function renderizarTodosLotes(tipo) {
-        const area = document.getElementById(tipo === 'cards' ? 'areaLotesCards' : 'areaLotesEmails');
+    function renderizarTodosLotes() {
+        const area = document.getElementById('areaLotes');
         area.innerHTML = '';
 
-        appState[tipo].lotes.forEach(lote => {
-            const estaAberto = appState[tipo].abertos.includes(lote.idLote);
+        lotesSalvos.forEach(lote => {
+            const estaAberto = lotesAbertos.includes(lote.idLote);
             const divLote = document.createElement('div');
             divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
-            divLote.id = `lote_${tipo}_${lote.idLote}`;
+            divLote.id = `lote_${lote.idLote}`;
 
-            let thead = tipo === 'cards' 
-                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th></tr>`
-                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ação</th></tr>`;
-
-            let botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
-            
-            // Só mostra o botão "Copiar Assinadas" se for um lote normal (não o card unificado de Assinadas Usadas)
-            if (tipo === 'emails' && !lote.nome.startsWith('ASSINADAS USADAS')) {
-                botoesCabecalho = `
-                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar e enviar para o card único" onclick="copiarAssinadasDoLote(event, ${lote.idLote})">Copiar Assinadas</button>
-                    ${botoesCabecalho}
-                `;
-            }
+            const bannerUrl = lote.banner || TOP_20_SERIES[0].url;
 
             let html = `
-                <div class="banner-lote" style="background-image: url('${lote.banner}');" onclick="alternarLote('${tipo}', ${lote.idLote})">
+                <div class="banner-lote" style="background-image: url('${bannerUrl}');" onclick="alternarLote(${lote.idLote})">
                     <div class="banner-overlay"></div>
                     <div class="cabecalho-lote">
                         <div class="info-lote">
                             <span class="icone-seta">▼</span>
                             <span>${lote.nome}</span>
-                            <span class="qtd-badge">${lote.itens.length}</span>
+                            <span class="qtd-badge">${lote.cartoes.length}</span>
                         </div>
-                        <div class="grupo-botoes-cabecalho">
-                            ${botoesCabecalho}
-                        </div>
+                        <button class="btn-excluir-lote" onclick="excluirLote(event, ${lote.idLote})">Apagar</button>
                     </div>
                 </div>
                 <div class="conteudo-lote">
                     <div class="tabela-container">
                         <table>
-                            <thead>${thead}</thead>
+                            <thead>
+                                <tr>
+                                    <th>Nº</th>
+                                    <th>Número do Cartão</th>
+                                    <th>Validade</th>
+                                    <th>CVV</th>
+                                </tr>
+                            </thead>
                             <tbody>`;
 
-            lote.itens.forEach((item, index) => {
-                const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
-                const jaFoiUsado = appState[tipo].usados.includes(idUnico);
-                const ehUltimo = (idUnico === appState[tipo].ultimo);
+            lote.cartoes.forEach((c, index) => {
+                const idUnico = `cc_${lote.idLote}_${c.numero}`;
+                const jaFoiUsado = botoesUsados.includes(idUnico);
+                const ehUltimo = (idUnico === ultimoCopiadoId);
                 
                 let classeStatus = 'btn-copiar';
                 let textoBotao = 'Copiar';
                 
-                if (jaFoiUsado) { classeStatus += ' usado'; textoBotao = 'Usado!'; }
-                if (ehUltimo) { classeStatus += ' ultimo-copiado'; }
+                if (jaFoiUsado) {
+                    classeStatus += ' usado';
+                    textoBotao = 'Usado!';
+                }
+                
+                // Se for o último cartão a ser copiado, recebe a classe extra verde
+                if (ehUltimo) {
+                    classeStatus += ' ultimo-copiado';
+                }
 
                 const classeSecundaria = index > 0 ? 'linha-secundaria' : '';
-                const textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto.replace(/'/g, "\\'");
 
-                if(tipo === 'cards') {
-                    html += `
-                        <tr id="tr_${idUnico}" class="${classeSecundaria}">
-                            <td><span class="badge-id">${item.idItem}</span></td>
-                            <td>
-                                <span class="cartao-num">${item.principal}</span>
-                                <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${tipo}', '${textToCopy}')">${textoBotao}</button>
-                            </td>
-                            <td>${item.secundario}</td>
-                            <td>${item.terciario}</td>
-                        </tr>`;
-                } else {
-                    const statusAtual = appState.emails.status[idUnico] || '';
-                    html += `
-                        <tr id="tr_${idUnico}" class="${classeSecundaria}">
-                            <td><span class="badge-id">${item.idItem}</span></td>
-                            <td class="email-text">${item.principal}</td>
-                            <td class="email-text">${item.secundario}</td>
-                            <td>
-                                <select class="status-select" onchange="mudarStatusItemEmail('${idUnico}', this.value)">
-                                    <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
-                                    <option value="virgem" ${statusAtual === 'virgem' ? 'selected' : ''}>Virgem</option>
-                                    <option value="suspensa" ${statusAtual === 'suspensa' ? 'selected' : ''}>Suspensa</option>
-                                    <option value="assinada" ${statusAtual === 'assinada' ? 'selected' : ''}>Assinada</option>
-                                </select>
-                            </td>
-                            <td>
-                                <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${tipo}', '${textToCopy}')">${textoBotao}</button>
-                            </td>
-                        </tr>`;
-                }
+                html += `
+                    <tr id="tr_${idUnico}" class="${classeSecundaria}">
+                        <td><span class="badge-id">${c.idItem}</span></td>
+                        <td>
+                            <span class="cartao-num">${c.numero}</span>
+                            <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${c.numero}')">${textoBotao}</button>
+                        </td>
+                        <td>${c.validade}</td>
+                        <td>${c.cvv}</td>
+                    </tr>`;
             });
 
-            html += `</tbody></table></div></div>`;
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+
             divLote.innerHTML = html;
             area.appendChild(divLote);
         });
 
-        filtrarItens(tipo);
+        filtrarCartoes();
     }
 
-    function copiarTexto(botao, tipo, texto) {
+    function copiarTexto(botao, texto) {
         navigator.clipboard.writeText(texto).then(() => {
             const id = botao.getAttribute('data-id');
 
-            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado`).forEach(btn => {
+            // 1. Remove visualmente a marcação verde de qualquer outro botão na tela
+            document.querySelectorAll('.btn-copiar.ultimo-copiado').forEach(btn => {
                 btn.classList.remove('ultimo-copiado');
             });
 
+            // 2. Aplica "Usado" e "Ultimo Copiado" (Verde) no botão clicado agora
             botao.innerText = 'Usado!';
-            botao.classList.add('usado', 'ultimo-copiado');
+            botao.classList.add('usado');
+            botao.classList.add('ultimo-copiado');
 
-            if (id && !appState[tipo].usados.includes(id)) {
-                appState[tipo].usados.push(id);
-                localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
+            // 3. Salva no histórico de usados (se já não estiver)
+            if (id && !botoesUsados.includes(id)) {
+                botoesUsados.push(id);
+                localStorage.setItem(CHAVE_USADOS, JSON.stringify(botoesUsados));
             }
             
+            // 4. Salva o ID deste botão como o ÚLTIMO que foi copiado
             if (id) {
-                appState[tipo].ultimo = id;
-                localStorage.setItem(CHAVES[tipo].ultimo, id);
+                ultimoCopiadoId = id;
+                localStorage.setItem(CHAVE_ULTIMO_COPIADO, ultimoCopiadoId);
             }
 
-            if (appState[tipo].ocultar) filtrarItens(tipo);
-            
-            mostrarStatus('Copiado!');
-        }).catch(err => console.error('Erro ao copiar: ', err));
+            if (ocultarUsadosAtivo) {
+                filtrarCartoes();
+            }
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+        });
     }
 
+    /* ====== FUNÇÕES DE BACKUP ====== */
     function exportarBackup() {
+        if (lotesSalvos.length === 0) {
+            alert('Não há dados para exportar!');
+            return;
+        }
+
         const backupData = {
-            versao: '8.0',
-            cards: appState.cards,
-            emails: appState.emails
+            lotes: localStorage.getItem(CHAVE_LOTES),
+            usados: localStorage.getItem(CHAVE_USADOS),
+            abertos: localStorage.getItem(CHAVE_ABERTOS),
+            ocultarUsados: localStorage.getItem(CHAVE_OCULTAR_USADOS),
+            ultimoCopiado: localStorage.getItem(CHAVE_ULTIMO_COPIADO)
         };
 
         const dataStr = JSON.stringify(backupData);
@@ -1040,10 +707,12 @@
         
         const a = document.createElement('a');
         a.href = url;
-        const nomeArquivo = `bklogins_full_backup_${gerarDataHoraFormatada().replace(/[^\w]/g, '-')}.json`;
+        const nomeArquivo = `bklogins_backup_${gerarDataHoraFormatada().replace(/[\/:]/g, '-')}.json`;
         a.download = nomeArquivo;
+        
         document.body.appendChild(a);
         a.click();
+        
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
@@ -1057,25 +726,24 @@
             try {
                 const data = JSON.parse(e.target.result);
                 
-                if (data.cards && data.emails) {
-                    localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(data.cards.lotes || []));
-                    localStorage.setItem(CHAVES.cards.usados, JSON.stringify(data.cards.usados || []));
-                    localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(data.cards.abertos || []));
-                    localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(data.cards.ocultar || false));
-                    if(data.cards.ultimo) localStorage.setItem(CHAVES.cards.ultimo, data.cards.ultimo);
-                    
-                    localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(data.emails.lotes || []));
-                    localStorage.setItem(CHAVES.emails.usados, JSON.stringify(data.emails.usados || []));
-                    localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(data.emails.abertos || []));
-                    localStorage.setItem(CHAVES.emails.ocultar, JSON.stringify(data.emails.ocultar || false));
-                    localStorage.setItem(CHAVES.emails.ocultarVirgens, JSON.stringify(data.emails.ocultarVirgens || false));
-                    localStorage.setItem(CHAVES.emails.ocultarSuspensas, JSON.stringify(data.emails.ocultarSuspensas || false));
-                    localStorage.setItem(CHAVES.emails.ocultarAssinadas, JSON.stringify(data.emails.ocultarAssinadas || false));
-                    localStorage.setItem(CHAVES.emails.status, JSON.stringify(data.emails.status || {}));
-                    if(data.emails.ultimo) localStorage.setItem(CHAVES.emails.ultimo, data.emails.ultimo);
+                if (data.lotes !== undefined) {
+                    localStorage.setItem(CHAVE_LOTES, data.lotes || '[]');
+                    localStorage.setItem(CHAVE_USADOS, data.usados || '[]');
+                    localStorage.setItem(CHAVE_ABERTOS, data.abertos || '[]');
+                    localStorage.setItem(CHAVE_OCULTAR_USADOS, data.ocultarUsados || 'false');
+                    localStorage.setItem(CHAVE_ULTIMO_COPIADO, data.ultimoCopiado || '');
 
-                    alert('✅ Backup restaurado com sucesso! A página será atualizada.');
-                    location.reload();
+                    // Atualiza as variaveis de memoria
+                    lotesSalvos = JSON.parse(data.lotes || '[]');
+                    botoesUsados = JSON.parse(data.usados || '[]');
+                    lotesAbertos = JSON.parse(data.abertos || '[]');
+                    ocultarUsadosAtivo = JSON.parse(data.ocultarUsados || 'false');
+                    ultimoCopiadoId = data.ultimoCopiado || null;
+
+                    atualizarBotaoFiltroVisual();
+                    renderizarTodosLotes();
+                    
+                    alert('✅ Backup restaurado com sucesso!');
                 } else {
                     alert('❌ Arquivo de backup inválido ou incompatível.');
                 }
