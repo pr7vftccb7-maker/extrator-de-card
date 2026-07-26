@@ -484,26 +484,26 @@
 
 <script>
     const CHAVES = {
-        scroll: 'posicao_scroll_v8',
+        scroll: 'posicao_scroll_v9',
         cards: {
-            lotes: 'lotes_cartoes_v8',
-            usados: 'botoes_usados_cartoes_v8',
-            abertos: 'lotes_abertos_cartoes_v8',
-            ocultar: 'filtro_ocultar_cartoes_v8',
-            ultimo: 'ultimo_copiado_cartoes_v8'
+            lotes: 'lotes_cartoes_v9',
+            usados: 'botoes_usados_cartoes_v9',
+            abertos: 'lotes_abertos_cartoes_v9',
+            ocultar: 'filtro_ocultar_cartoes_v9',
+            ultimo: 'ultimo_copiado_cartoes_v9'
         },
         emails: {
-            lotes: 'lotes_emails_v8',
-            usados: 'botoes_usados_emails_v8',
-            abertos: 'lotes_abertos_emails_v8',
-            ocultar: 'filtro_ocultar_emails_v8',
-            ocultarVirgens: 'filtro_ocultar_virgens_v8',
-            ocultarSuspensas: 'filtro_ocultar_suspensas_v8',
-            ocultarAssinadas: 'filtro_ocultar_assinadas_v8',
-            status: 'status_emails_v8',
-            ultimo: 'ultimo_copiado_emails_v8'
+            lotes: 'lotes_emails_v9',
+            usados: 'botoes_usados_emails_v9',
+            abertos: 'lotes_abertos_emails_v9',
+            ocultar: 'filtro_ocultar_emails_v9',
+            ocultarVirgens: 'filtro_ocultar_virgens_v9',
+            ocultarSuspensas: 'filtro_ocultar_suspensas_v9',
+            ocultarAssinadas: 'filtro_ocultar_assinadas_v9',
+            status: 'status_emails_v9',
+            ultimo: 'ultimo_copiado_emails_v9'
         },
-        abaAtiva: 'aba_ativa_v8'
+        abaAtiva: 'aba_ativa_v9'
     };
 
     const BANNERS = [
@@ -679,7 +679,7 @@
                 const idUnico = `item_emails_${novoLote.idLote}_${item.idItem}`;
                 appState.emails.status[idUnico] = 'virgem';
             });
-            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
+            localStorage.setItem(CHAVES[tipo].emails.status, JSON.stringify(appState.emails.status)); // Correção segura
         }
 
         campo.value = '';
@@ -708,14 +708,12 @@
         }
     }
 
-    // COPIA AS ASSINADAS E ADICIONA NO ÚNICO CARD "ASSINADAS USADAS" (OU CRIA APENAS SE NENHUM EXISTIR)
     function copiarAssinadasDoLote(event, idLote) {
         event.stopPropagation();
 
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
-        // Filtra apenas contas marcadas como "assinada" e que AINDA NÃO FORAM COPIADAS anteriormente
         const itensAssinadosParaCopiar = lote.itens.filter(item => {
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
             const statusAtual = appState.emails.status[idUnico] || '';
@@ -728,7 +726,6 @@
             return;
         }
 
-        // Monta o texto para a área de transferência
         let textoParaClipboard = '';
         itensAssinadosParaCopiar.forEach(item => {
             textoParaClipboard += item.textoCompleto + '\n';
@@ -741,11 +738,9 @@
         navigator.clipboard.writeText(textoParaClipboard.trim()).then(() => {
             localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
 
-            // PROCURA SE JÁ EXISTE UM CARD ÚNICO "ASSINADAS USADAS"
             let loteUnicoAssinadas = appState.emails.lotes.find(l => l.nome.startsWith('ASSINADAS USADAS'));
 
             if (loteUnicoAssinadas) {
-                // Se já existe, apenas adiciona os novos itens ao final dele
                 let proximoId = loteUnicoAssinadas.itens.length + 1;
                 itensAssinadosParaCopiar.forEach(item => {
                     loteUnicoAssinadas.itens.push({
@@ -757,7 +752,6 @@
                     });
                 });
             } else {
-                // Se não existe, cria o ÚNICO card de Assinadas Usadas
                 const itensNovosLote = itensAssinadosParaCopiar.map((item, idx) => ({
                     idItem: idx + 1,
                     principal: item.principal,
@@ -777,7 +771,6 @@
                 appState.emails.lotes.unshift(loteUnicoAssinadas);
             }
 
-            // Garante que o card único de usadas esteja aberto para o usuário ver
             if (!appState.emails.abertos.includes(loteUnicoAssinadas.idLote)) {
                 appState.emails.abertos.push(loteUnicoAssinadas.idLote);
             }
@@ -917,7 +910,6 @@
 
             let botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
             
-            // Só mostra o botão "Copiar Assinadas" se for um lote normal (não o card unificado de Assinadas Usadas)
             if (tipo === 'emails' && !lote.nome.startsWith('ASSINADAS USADAS')) {
                 botoesCabecalho = `
                     <button class="btn-acao-lote btn-copiar-lote" title="Copiar e enviar para o card único" onclick="copiarAssinadasDoLote(event, ${lote.idLote})">Copiar Assinadas</button>
@@ -1029,7 +1021,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '8.0',
+            versao: '9.0',
             cards: appState.cards,
             emails: appState.emails
         };
@@ -1048,6 +1040,7 @@
         URL.revokeObjectURL(url);
     }
 
+    /* ====== IMPORTAR / RESTAURAR (RETROCOMPATÍVEL COM QUALQUER VERSÃO ANTERIOR) ====== */
     function importarBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1057,30 +1050,49 @@
             try {
                 const data = JSON.parse(e.target.result);
                 
-                if (data.cards && data.emails) {
-                    localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(data.cards.lotes || []));
-                    localStorage.setItem(CHAVES.cards.usados, JSON.stringify(data.cards.usados || []));
-                    localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(data.cards.abertos || []));
-                    localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(data.cards.ocultar || false));
-                    if(data.cards.ultimo) localStorage.setItem(CHAVES.cards.ultimo, data.cards.ultimo);
-                    
-                    localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(data.emails.lotes || []));
-                    localStorage.setItem(CHAVES.emails.usados, JSON.stringify(data.emails.usados || []));
-                    localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(data.emails.abertos || []));
-                    localStorage.setItem(CHAVES.emails.ocultar, JSON.stringify(data.emails.ocultar || false));
-                    localStorage.setItem(CHAVES.emails.ocultarVirgens, JSON.stringify(data.emails.ocultarVirgens || false));
-                    localStorage.setItem(CHAVES.emails.ocultarSuspensas, JSON.stringify(data.emails.ocultarSuspensas || false));
-                    localStorage.setItem(CHAVES.emails.ocultarAssinadas, JSON.stringify(data.emails.ocultarAssinadas || false));
-                    localStorage.setItem(CHAVES.emails.status, JSON.stringify(data.emails.status || {}));
-                    if(data.emails.ultimo) localStorage.setItem(CHAVES.emails.ultimo, data.emails.ultimo);
+                // Suporte para arquivos que venham unificados (cards/emails) ou antigos
+                const dadosCards = data.cards || data;
+                const dadosEmails = data.emails || data;
 
-                    alert('✅ Backup restaurado com sucesso! A página será atualizada.');
-                    location.reload();
-                } else {
-                    alert('❌ Arquivo de backup inválido ou incompatível.');
-                }
+                // Restaurando Cards de forma segura (pegando de qualquer versão ou padrão vazio)
+                const cLotes = dadosCards.lotes || [];
+                const cUsados = dadosCards.usados || [];
+                const cAbertos = dadosCards.abertos || [];
+                const cOcultar = dadosCards.ocultar !== undefined ? dadosCards.ocultar : false;
+                const cUltimo = dadosCards.ultimo || null;
+
+                localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(cLotes));
+                localStorage.setItem(CHAVES.cards.usados, JSON.stringify(cUsados));
+                localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(cAbertos));
+                localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(cOcultar));
+                if(cUltimo) localStorage.setItem(CHAVES.cards.ultimo, cUltimo);
+
+                // Restaurando Emails de forma segura
+                const eLotes = dadosEmails.lotes || [];
+                const eUsados = dadosEmails.usados || [];
+                const eAbertos = dadosEmails.abertos || [];
+                const eOcultar = dadosEmails.ocultar !== undefined ? dadosEmails.ocultar : false;
+                const eOcultarVirgens = dadosEmails.ocultarVirgens !== undefined ? dadosEmails.ocultarVirgens : false;
+                const eOcultarSuspensas = dadosEmails.ocultarSuspensas !== undefined ? dadosEmails.ocultarSuspensas : false;
+                const eOcultarAssinadas = dadosEmails.ocultarAssinadas !== undefined ? dadosEmails.ocultarAssinadas : false;
+                const eStatus = dadosEmails.status || {};
+                const eUltimo = dadosEmails.ultimo || null;
+
+                localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(eLotes));
+                localStorage.setItem(CHAVES.emails.usados, JSON.stringify(eUsados));
+                localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(eAbertos));
+                localStorage.setItem(CHAVES.emails.ocultar, JSON.stringify(eOcultar));
+                localStorage.setItem(CHAVES.emails.ocultarVirgens, JSON.stringify(eOcultarVirgens));
+                localStorage.setItem(CHAVES.emails.ocultarSuspensas, JSON.stringify(eOcultarSuspensas));
+                localStorage.setItem(CHAVES.emails.ocultarAssinadas, JSON.stringify(eOcultarAssinadas));
+                localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
+                if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
+
+                alert('✅ Backup antigo (ou atual) restaurado com sucesso! A página será atualizada.');
+                location.reload();
             } catch (err) {
-                alert('❌ Erro ao ler o arquivo de backup.');
+                console.error(err);
+                alert('❌ Erro ao ler o arquivo de backup. O arquivo pode estar corrompido.');
             }
             event.target.value = '';
         };
