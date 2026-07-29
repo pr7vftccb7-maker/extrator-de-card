@@ -331,6 +331,24 @@
             box-shadow: 0 0 10px rgba(52, 199, 89, 0.3);
         }
 
+        .btn-excluir-item {
+            background-color: #2b2b2b;
+            color: #ff4d4d;
+            border: 1px solid #444;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 6px;
+            transition: all 0.2s;
+        }
+        .btn-excluir-item:hover {
+            background-color: #ff4d4d;
+            color: white;
+            border-color: #ff4d4d;
+        }
+
         .badge-id {
             background: #282828;
             padding: 3px 8px;
@@ -418,7 +436,6 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<!-- Input de arquivo universal oculto -->
 <input type="file" id="fileImportGlobal" style="display: none;" accept=".json,.txt" onchange="importarBackup(event)">
 
 <!-- VIEW 1: CARTÕES -->
@@ -714,7 +731,7 @@
                 const idUnico = `item_emails_${novoLote.idLote}_${item.idItem}`;
                 appState.emails.status[idUnico] = 'virgem';
             });
-            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
+            localStorage.setItem(CHAVES[tipo].status, JSON.stringify(appState.emails.status));
         }
 
         campo.value = '';
@@ -740,6 +757,27 @@
             localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
             localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
             renderizarTodosLotes(tipo);
+        }
+    }
+
+    // Função para excluir um item específico (linha) dentro de um lote
+    function excluirItem(event, tipo, idLote, idItem) {
+        event.stopPropagation();
+        if (confirm('Deseja remover este item?')) {
+            const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
+            if (lote) {
+                lote.itens = lote.itens.filter(i => i.idItem !== idItem);
+                
+                // Remove dos usados se estive lá
+                const idUnico = `item_${tipo}_${idLote}_${idItem}`;
+                appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
+
+                localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+                localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
+                
+                renderizarTodosLotes(tipo);
+                mostrarStatus('Item removido!');
+            }
         }
     }
 
@@ -937,8 +975,8 @@
             divLote.id = `lote_${tipo}_${lote.idLote}`;
 
             let thead = tipo === 'cards' 
-                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th></tr>`
-                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ação</th></tr>`;
+                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`
+                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
 
             let botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
             
@@ -982,6 +1020,7 @@
 
                 const classeSecundaria = index > 0 ? 'linha-secundaria' : '';
                 const textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto.replace(/'/g, "\\'");
+                const botaoExcluirHtml = `<button class="btn-excluir-item" onclick="excluirItem(event, '${tipo}', ${lote.idLote}, ${item.idItem})">🗑️</button>`;
 
                 if(tipo === 'cards') {
                     html += `
@@ -993,6 +1032,7 @@
                             </td>
                             <td>${item.secundario}</td>
                             <td>${item.terciario}</td>
+                            <td>${botaoExcluirHtml}</td>
                         </tr>`;
                 } else {
                     const statusAtual = appState.emails.status[idUnico] || '';
@@ -1011,6 +1051,7 @@
                             </td>
                             <td>
                                 <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${tipo}', '${textToCopy}')">${textoBotao}</button>
+                                ${botaoExcluirHtml}
                             </td>
                         </tr>`;
                 }
@@ -1086,11 +1127,9 @@
                 const conteudo = e.target.result;
                 let data;
 
-                // Tenta interpretar como JSON
                 try {
                     data = JSON.parse(conteudo);
                 } catch (jsonErr) {
-                    // Se não for JSON válido, trata como arquivo de texto puro (lista de cartões ou emails em linhas)
                     const linhas = conteudo.split(/\r?\n/);
                     const itensCards = [];
                     let contador = 1;
