@@ -760,7 +760,29 @@
         }
     }
 
-    // Função para excluir um item específico (linha) dentro de um lote
+    function copiarTodosCartoesLote(event, idLote) {
+        event.stopPropagation();
+        const lote = appState.cards.lotes.find(l => l.idLote === idLote);
+        if (!lote || !lote.itens || lote.itens.length === 0) return;
+
+        let textoCompleto = '';
+        lote.itens.forEach(item => {
+            textoCompleto += (item.textoCompleto || item.principal) + '\n';
+            const idUnico = `item_cards_${lote.idLote}_${item.idItem}`;
+            if (!appState.cards.usados.includes(idUnico)) {
+                appState.cards.usados.push(idUnico);
+            }
+        });
+
+        navigator.clipboard.writeText(textoCompleto.trim()).then(() => {
+            localStorage.setItem(CHAVES.cards.usados, JSON.stringify(appState.cards.usados));
+            renderizarTodosLotes('cards');
+            mostrarStatus(`✅ ${lote.itens.length} cartões copiados!`);
+        }).catch(err => {
+            alert('❌ Erro ao acessar a área de transferência.');
+        });
+    }
+
     function excluirItem(event, tipo, idLote, idItem) {
         event.stopPropagation();
         if (confirm('Deseja remover este item?')) {
@@ -768,7 +790,6 @@
             if (lote) {
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 
-                // Remove dos usados se estive lá
                 const idUnico = `item_${tipo}_${idLote}_${idItem}`;
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
 
@@ -978,13 +999,21 @@
                 ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`
                 : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
 
-            let botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
+            let botoesCabecalho = '';
             
-            if (tipo === 'emails' && !lote.nome.startsWith('ASSINADAS USADAS')) {
+            if (tipo === 'cards') {
                 botoesCabecalho = `
-                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar e enviar para o card único" onclick="copiarAssinadasDoLote(event, ${lote.idLote})">Copiar Assinadas</button>
-                    ${botoesCabecalho}
+                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar todos os cartões deste lote" onclick="copiarTodosCartoesLote(event, ${lote.idLote})">Copiar Todas</button>
+                    <button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>
                 `;
+            } else {
+                botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
+                if (!lote.nome.startsWith('ASSINADAS USADAS')) {
+                    botoesCabecalho = `
+                        <button class="btn-acao-lote btn-copiar-lote" title="Copiar e enviar para o card único" onclick="copiarAssinadasDoLote(event, ${lote.idLote})">Copiar Assinadas</button>
+                        ${botoesCabecalho}
+                    `;
+                }
             }
 
             let html = `
