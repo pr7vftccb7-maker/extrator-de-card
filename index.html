@@ -309,7 +309,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Estilo para Linhas Selecionadas */
         tr.linha-item {
             cursor: pointer;
             transition: background-color 0.15s ease;
@@ -405,7 +404,6 @@
             display: none !important;
         }
 
-        /* Barra Flutuante de Ação para Itens Selecionados */
         .painel-selecao-flutuante {
             position: fixed;
             bottom: 65px;
@@ -497,7 +495,6 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<!-- PAINEL FLUTUANTE DE COPIAR SELECIONADOS -->
 <div id="painelSelecao" class="painel-selecao-flutuante">
     <span id="txtQtdSelecionados">0 selecionados</span>
     <button class="btn-copiar-selecionados" onclick="copiarItensSelecionados()">Copiar Selecionados</button>
@@ -630,7 +627,6 @@
         abaAtiva: localStorage.getItem(CHAVES.abaAtiva) || 'cards'
     };
 
-    // Controle de Seleção Múltipla
     let modoSelecaoAtivo = false;
     let itensSelecionados = new Map(); 
     let timerPressionar = null;
@@ -672,7 +668,6 @@
         }
     }
 
-    // --- Lógica de Seleção Múltipla ---
     function iniciarToqueSelecao(elementoTr, idUnico, textoCopiar) {
         timerPressionar = setTimeout(() => {
             modoSelecaoAtivo = true;
@@ -928,13 +923,20 @@
         });
     }
 
+    // EXCLUIR ITEM COM REORDENAÇÃO AUTOMÁTICA DA SEQUÊNCIA (1, 2, 3...)
     function excluirItem(event, tipo, idLote, idItem) {
         event.stopPropagation();
         if (confirm('Deseja remover este item?')) {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
             if (lote) {
+                // Filtra removendo o item desejado
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 
+                // Reordena sequencialmente a numeração de todos os itens restantes
+                lote.itens.forEach((item, index) => {
+                    item.idItem = index + 1;
+                });
+
                 const idUnico = `item_${tipo}_${idLote}_${idItem}`;
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
 
@@ -942,7 +944,7 @@
                 localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
                 
                 renderizarTodosLotes(tipo);
-                mostrarStatus('Item removido!');
+                mostrarStatus('Item removido e lista reordenada!');
             }
         }
     }
