@@ -569,13 +569,10 @@
         renderizarTodosLotes('cards');
         renderizarTodosLotes('emails');
 
-        const posicaoSalva = localStorage.getItem(CHAVES.scroll);
-        if (posicaoSalva !== null) {
-            setTimeout(() => { window.scrollTo(0, parseInt(posicaoSalva, 10)); }, 100);
-        }
+        setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
     });
 
-    function mudarAba(aba, resetScroll = true) {
+    function mudarAba(aba, focarUltimo = true) {
         appState.abaAtiva = aba;
         localStorage.setItem(CHAVES.abaAtiva, aba);
 
@@ -587,7 +584,19 @@
         document.getElementById('nav-btn-emails').classList.remove('active');
         document.getElementById(`nav-btn-${aba}`).classList.add('active');
 
-        if(resetScroll) window.scrollTo(0, 0);
+        if (focarUltimo) {
+            setTimeout(() => { rolarParaUltimoCopiado(aba); }, 50);
+        }
+    }
+
+    // Função que centraliza a tela no último item copiado da aba informada
+    function rolarParaUltimoCopiado(aba) {
+        const elementoVerde = document.querySelector(`#view-${aba} .btn-copiar.ultimo-copiado`);
+        if (elementoVerde) {
+            elementoVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     let touchstartX = 0;
@@ -618,11 +627,6 @@
             }
         }
     }
-
-    window.addEventListener('scroll', () => { localStorage.setItem(CHAVES.scroll, window.scrollY); });
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') localStorage.setItem(CHAVES.scroll, window.scrollY);
-    });
 
     function mostrarStatus(mensagem) {
         const el = document.getElementById('statusScroll');
@@ -766,18 +770,30 @@
         if (!lote || !lote.itens || lote.itens.length === 0) return;
 
         let textoCompleto = '';
+        let quantidadeCopiada = 0;
+
         lote.itens.forEach(item => {
-            textoCompleto += (item.textoCompleto || item.principal) + '\n';
             const idUnico = `item_cards_${lote.idLote}_${item.idItem}`;
-            if (!appState.cards.usados.includes(idUnico)) {
-                appState.cards.usados.push(idUnico);
+            const trElemento = document.getElementById(`tr_${idUnico}`);
+
+            if (trElemento && !trElemento.classList.contains('linha-oculta')) {
+                textoCompleto += (item.textoCompleto || item.principal) + '\n';
+                quantidadeCopiada++;
+                if (!appState.cards.usados.includes(idUnico)) {
+                    appState.cards.usados.push(idUnico);
+                }
             }
         });
+
+        if (quantidadeCopiada === 0) {
+            alert('⚠️ Nenhum cartão visível para copiar.');
+            return;
+        }
 
         navigator.clipboard.writeText(textoCompleto.trim()).then(() => {
             localStorage.setItem(CHAVES.cards.usados, JSON.stringify(appState.cards.usados));
             renderizarTodosLotes('cards');
-            mostrarStatus(`✅ ${lote.itens.length} cartões copiados!`);
+            mostrarStatus(`✅ ${quantidadeCopiada} cartões visíveis copiados!`);
         }).catch(err => {
             alert('❌ Erro ao acessar a área de transferência.');
         });
@@ -1003,7 +1019,7 @@
             
             if (tipo === 'cards') {
                 botoesCabecalho = `
-                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar todos os cartões deste lote" onclick="copiarTodosCartoesLote(event, ${lote.idLote})">Copiar Todas</button>
+                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar apenas os cartões visíveis deste lote" onclick="copiarTodosCartoesLote(event, ${lote.idLote})">Copiar Todas</button>
                     <button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>
                 `;
             } else {
@@ -1269,6 +1285,7 @@
                 renderizarTodosLotes('emails');
 
                 alert('✅ Backup importado e renderizado com sucesso!');
+                rolarParaUltimoCopiado(appState.abaAtiva);
             } catch (err) {
                 console.error(err);
                 alert('❌ Erro ao processar o arquivo de importação.');
