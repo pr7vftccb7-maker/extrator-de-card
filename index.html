@@ -631,7 +631,29 @@
     let itensSelecionados = new Map(); 
     let timerPressionar = null;
 
+    // REORDENAÇÃO AUTOMÁTICA DE LISTAS ANTIGAS AO CARREGAR
+    function reordenarEAtualizarLotes(tipo) {
+        let alterou = false;
+        appState[tipo].lotes.forEach(lote => {
+            if (lote.itens && lote.itens.length > 0) {
+                lote.itens.forEach((item, index) => {
+                    const novoId = index + 1;
+                    if (item.idItem !== novoId) {
+                        item.idItem = novoId;
+                        alterou = true;
+                    }
+                });
+            }
+        });
+        if (alterou) {
+            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+        }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+        reordenarEAtualizarLotes('cards');
+        reordenarEAtualizarLotes('emails');
+
         mudarAba(appState.abaAtiva, false);
         atualizarBotaoFiltroVisual('cards');
         atualizarBotaoFiltroVisual('emails');
@@ -790,7 +812,7 @@
                             });
                         }
                     });
-                    localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+                    reordenarEAtualizarLotes(tipo);
                     localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
                     renderizarTodosLotes(tipo);
                     campo.value = '';
@@ -852,7 +874,7 @@
         };
 
         appState[tipo].lotes.unshift(novoLote);
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+        reordenarEAtualizarLotes(tipo);
         
         if (tipo === 'emails') {
             itens.forEach(item => {
@@ -923,16 +945,14 @@
         });
     }
 
-    // EXCLUIR ITEM COM REORDENAÇÃO AUTOMÁTICA DA SEQUÊNCIA (1, 2, 3...)
     function excluirItem(event, tipo, idLote, idItem) {
         event.stopPropagation();
         if (confirm('Deseja remover este item?')) {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
             if (lote) {
-                // Filtra removendo o item desejado
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 
-                // Reordena sequencialmente a numeração de todos os itens restantes
+                // Reordena e renumera sequencialmente (1, 2, 3...)
                 lote.itens.forEach((item, index) => {
                     item.idItem = index + 1;
                 });
@@ -1016,7 +1036,7 @@
                 appState.emails.abertos.push(loteUnicoAssinadas.idLote);
             }
 
-            localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
+            reordenarEAtualizarLotes('emails');
             localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(appState.emails.abertos));
 
             renderizarTodosLotes('emails');
@@ -1343,7 +1363,7 @@
                         };
                         appState.cards.lotes.unshift(novoLote);
                         appState.cards.abertos.push(novoLote.idLote);
-                        localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(appState.cards.lotes));
+                        reordenarEAtualizarLotes('cards');
                         localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(appState.cards.abertos));
                         renderizarTodosLotes('cards');
                         alert(`✅ Arquivo de texto importado com ${itensCards.length} cartões!`);
@@ -1418,6 +1438,9 @@
                 appState.emails.ocultarAssinadas = eOcultarAssinadas;
                 appState.emails.status = eStatus;
                 appState.emails.ultimo = eUltimo;
+
+                reordenarEAtualizarLotes('cards');
+                reordenarEAtualizarLotes('emails');
 
                 atualizarBotaoFiltroVisual('cards');
                 atualizarBotaoFiltroVisual('emails');
