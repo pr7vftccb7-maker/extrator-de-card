@@ -631,7 +631,6 @@
     let itensSelecionados = new Map(); 
     let timerPressionar = null;
 
-    // REORDENAÇÃO AUTOMÁTICA DE LISTAS ANTIGAS AO CARREGAR
     function reordenarEAtualizarLotes(tipo) {
         let alterou = false;
         appState[tipo].lotes.forEach(lote => {
@@ -878,8 +877,10 @@
         
         if (tipo === 'emails') {
             itens.forEach(item => {
-                const idUnico = `item_emails_${novoLote.idLote}_${item.idItem}`;
-                appState.emails.status[idUnico] = 'virgem';
+                const emailChave = item.principal.toLowerCase();
+                if (!appState.emails.status[emailChave]) {
+                    appState.emails.status[emailChave] = 'virgem';
+                }
             });
             localStorage.setItem(CHAVES[tipo].status, JSON.stringify(appState.emails.status));
         }
@@ -952,7 +953,6 @@
             if (lote) {
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 
-                // Reordena e renumera sequencialmente (1, 2, 3...)
                 lote.itens.forEach((item, index) => {
                     item.idItem = index + 1;
                 });
@@ -976,8 +976,9 @@
         if (!lote) return;
 
         const itensAssinadosParaCopiar = lote.itens.filter(item => {
+            const emailChave = item.principal.toLowerCase();
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const statusAtual = appState.emails.status[idUnico] || '';
+            const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
             const jaFoiCopiadoAssinada = appState.emails.usados.includes(idUnico);
             return statusAtual === 'assinada' && !jaFoiCopiadoAssinada;
         });
@@ -1097,8 +1098,10 @@
         }
     }
 
-    function mudarStatusItemEmail(idUnico, novoStatus) {
-        appState.emails.status[idUnico] = novoStatus;
+    // Vincula o status diretamente ao e-mail (chave minúscula)
+    function mudarStatusItemEmail(emailText, novoStatus) {
+        const emailChave = emailText.toLowerCase();
+        appState.emails.status[emailChave] = novoStatus;
         localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
         filtrarItens('emails');
     }
@@ -1128,7 +1131,8 @@
                 let atendeFiltroAssinadas = true;
 
                 if (tipo === 'emails') {
-                    const statusAtual = appState.emails.status[idUnico] || '';
+                    const emailChave = item.principal.toLowerCase();
+                    const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
                     if (appState.emails.ocultarVirgens && statusAtual === 'virgem') atendeFiltroVirgens = false;
                     if (appState.emails.ocultarSuspensas && statusAtual === 'suspensa') atendeFiltroSuspensas = false;
                     if (appState.emails.ocultarAssinadas && statusAtual === 'assinada') atendeFiltroAssinadas = false;
@@ -1239,14 +1243,15 @@
                             <td>${botaoExcluirHtml}</td>
                         </tr>`;
                 } else {
-                    const statusAtual = appState.emails.status[idUnico] || '';
+                    const emailChave = item.principal.toLowerCase();
+                    const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
                     html += `
                         <tr id="tr_${idUnico}" class="linha-item ${classeSecundaria}" ${eventosTr}>
                             <td><span class="badge-id">${item.idItem}</span></td>
                             <td class="email-text">${item.principal}</td>
                             <td class="email-text">${item.secundario}</td>
                             <td>
-                                <select class="status-select" onchange="mudarStatusItemEmail('${idUnico}', this.value)">
+                                <select class="status-select" onchange="mudarStatusItemEmail('${item.principal.replace(/'/g, "\\'")}', this.value)">
                                     <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
                                     <option value="virgem" ${statusAtual === 'virgem' ? 'selected' : ''}>Virgem</option>
                                     <option value="suspensa" ${statusAtual === 'suspensa' ? 'selected' : ''}>Suspensa</option>
