@@ -404,42 +404,64 @@
             display: none !important;
         }
 
+        /* Painel Flutuante de Seleção */
         .painel-selecao-flutuante {
             position: fixed;
             bottom: 65px;
             left: 50%;
             transform: translateX(-50%);
-            background: #E50914;
+            background: #222222;
+            border: 1px solid #444444;
             color: white;
-            padding: 10px 18px;
+            padding: 8px 14px;
             border-radius: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.85);
             display: none;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             z-index: 2000;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             animation: bounceIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 95%;
         }
         @keyframes bounceIn {
             from { transform: translate(-50%, 20px); opacity: 0; }
             to { transform: translate(-50%, 0); opacity: 1; }
         }
         .btn-copiar-selecionados {
-            background-color: #ffffff;
-            color: #E50914;
+            background-color: #34c759;
+            color: #ffffff;
             border: none;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 20px;
             font-weight: 800;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             text-transform: uppercase;
+            transition: background 0.2s;
+        }
+        .btn-copiar-selecionados:hover {
+            background-color: #2ea84a;
+        }
+        .btn-apagar-selecionados {
+            background-color: #E50914;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.2s;
+        }
+        .btn-apagar-selecionados:hover {
+            background-color: #b81d24;
         }
         .btn-cancelar-selecao {
-            background: rgba(0,0,0,0.2);
-            color: #fff;
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
             border: none;
             width: 24px;
             height: 24px;
@@ -449,6 +471,11 @@
             align-items: center;
             justify-content: center;
             font-size: 12px;
+            margin-left: 2px;
+        }
+        .btn-cancelar-selecao:hover {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
         }
 
         .bottom-nav {
@@ -496,8 +523,9 @@
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
 <div id="painelSelecao" class="painel-selecao-flutuante">
-    <span id="txtQtdSelecionados">0 selecionados</span>
-    <button class="btn-copiar-selecionados" onclick="copiarItensSelecionados()">Copiar Selecionados</button>
+    <span id="txtQtdSelecionados">0 sel.</span>
+    <button class="btn-copiar-selecionados" onclick="copiarItensSelecionados()">Copiar</button>
+    <button class="btn-apagar-selecionados" onclick="apagarItensSelecionados()">Apagar</button>
     <button class="btn-cancelar-selecao" onclick="limparSelecao()">✕</button>
 </div>
 
@@ -689,10 +717,10 @@
         }
     }
 
-    function iniciarToqueSelecao(elementoTr, idUnico, textoCopiar) {
+    function iniciarToqueSelecao(elementoTr, idUnico, textoCopiar, idLote, idItem) {
         timerPressionar = setTimeout(() => {
             modoSelecaoAtivo = true;
-            alternarSelecaoItem(elementoTr, idUnico, textoCopiar);
+            alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem);
         }, 400); 
     }
 
@@ -703,20 +731,20 @@
         }
     }
 
-    function clicarItemLinha(elementoTr, idUnico, textoCopiar, e) {
+    function clicarItemLinha(elementoTr, idUnico, textoCopiar, idLote, idItem, e) {
         if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
 
         if (modoSelecaoAtivo) {
-            alternarSelecaoItem(elementoTr, idUnico, textoCopiar);
+            alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem);
         }
     }
 
-    function alternarSelecaoItem(elementoTr, idUnico, textoCopiar) {
+    function alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem) {
         if (itensSelecionados.has(idUnico)) {
             itensSelecionados.delete(idUnico);
             elementoTr.classList.remove('item-selecionado');
         } else {
-            itensSelecionados.set(idUnico, { elementoTr, texto: textoCopiar });
+            itensSelecionados.set(idUnico, { elementoTr, texto: textoCopiar, idLote, idItem });
             elementoTr.classList.add('item-selecionado');
         }
 
@@ -730,7 +758,7 @@
     function atualizarPainelSelecao() {
         const painel = document.getElementById('painelSelecao');
         const txt = document.getElementById('txtQtdSelecionados');
-        txt.innerText = `${itensSelecionados.size} selecionado(s)`;
+        txt.innerText = `${itensSelecionados.size} sel.`;
         painel.style.display = 'flex';
     }
 
@@ -771,6 +799,31 @@
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
             limparSelecao();
         }).catch(err => alert('❌ Erro ao acessar a área de transferência.'));
+    }
+
+    function apagarItensSelecionados() {
+        if (itensSelecionados.size === 0) return;
+
+        if (confirm(`Deseja apagar os ${itensSelecionados.size} itens selecionados?`)) {
+            const tipo = appState.abaAtiva;
+
+            itensSelecionados.forEach((val, idUnico) => {
+                const lote = appState[tipo].lotes.find(l => l.idLote === val.idLote);
+                if (lote) {
+                    lote.itens = lote.itens.filter(i => i.idItem !== val.idItem);
+                }
+                appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
+            });
+
+            reordenarEAtualizarLotes(tipo);
+
+            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
+
+            renderizarTodosLotes(tipo);
+            mostrarStatus('Itens removidos com sucesso!');
+            limparSelecao();
+        }
     }
 
     function mostrarStatus(mensagem) {
@@ -1098,7 +1151,6 @@
         }
     }
 
-    // Vincula o status diretamente ao e-mail (chave minúscula)
     function mudarStatusItemEmail(emailText, novoStatus) {
         const emailChave = emailText.toLowerCase();
         appState.emails.status[emailChave] = novoStatus;
@@ -1223,11 +1275,11 @@
                 const botaoExcluirHtml = `<button class="btn-excluir-item" onclick="excluirItem(event, '${tipo}', ${lote.idLote}, ${item.idItem})">🗑️</button>`;
 
                 const eventosTr = `
-                    onmousedown="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}')"
+                    onmousedown="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem})"
                     onmouseup="cancelarToqueSelecao()"
-                    ontouchstart="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}')"
+                    ontouchstart="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem})"
                     ontouchend="cancelarToqueSelecao()"
-                    onclick="clicarItemLinha(this, '${idUnico}', '${textToCopy}', event)"
+                    onclick="clicarItemLinha(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem}, event)"
                 `;
 
                 if(tipo === 'cards') {
