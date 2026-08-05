@@ -397,13 +397,6 @@
             border-color: #E50914;
         }
 
-        .card-lote:not(.aberto) tr.linha-secundaria {
-            display: none !important;
-        }
-        tr.linha-oculta {
-            display: none !important;
-        }
-
         /* Painel Flutuante de Seleção */
         .painel-selecao-flutuante {
             position: fixed;
@@ -795,9 +788,23 @@
                 localStorage.setItem(CHAVES[tipo].ultimo, ultimoId);
             }
 
+            // Preserva quais itens estavam selecionados
+            const idsSelecionadosAnteriores = Array.from(itensSelecionados.keys());
+
             renderizarTodosLotes(tipo);
+
+            // Re-aplica visualmente a seleção e atualiza as referências dos elementos no DOM
+            idsSelecionadosAnteriores.forEach(idUnico => {
+                const itemDados = itensSelecionados.get(idUnico);
+                const novoTr = document.getElementById(`tr_${idUnico}`);
+                if (novoTr && itemDados) {
+                    novoTr.classList.add('item-selecionado');
+                    itemDados.elementoTr = novoTr;
+                }
+            });
+
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
-            limparSelecao();
+            atualizarPainelSelecao();
         }).catch(err => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
