@@ -397,6 +397,11 @@
             border-color: #E50914;
         }
 
+        /* COMPACTAÇÃO / MINIMIZAÇÃO DE LOTES */
+        .card-lote:not(.aberto) .conteudo-lote tr.linha-secundaria {
+            display: none !important;
+        }
+
         /* Painel Flutuante de Seleção */
         .painel-selecao-flutuante {
             position: fixed;
@@ -788,12 +793,10 @@
                 localStorage.setItem(CHAVES[tipo].ultimo, ultimoId);
             }
 
-            // Preserva quais itens estavam selecionados
             const idsSelecionadosAnteriores = Array.from(itensSelecionados.keys());
 
             renderizarTodosLotes(tipo);
 
-            // Re-aplica visualmente a seleção e atualiza as referências dos elementos no DOM
             idsSelecionadosAnteriores.forEach(idUnico => {
                 const itemDados = itensSelecionados.get(idUnico);
                 const novoTr = document.getElementById(`tr_${idUnico}`);
@@ -865,11 +868,6 @@
                 if (parsedJson.lotes && Array.isArray(parsedJson.lotes)) {
                     parsedJson.lotes.forEach(loteImportado => {
                         appState[tipo].lotes.unshift(loteImportado);
-                        if (loteImportado.itens) {
-                            loteImportado.itens.forEach(item => {
-                                appState[tipo].abertos.push(loteImportado.idLote);
-                            });
-                        }
                     });
                     reordenarEAtualizarLotes(tipo);
                     localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
@@ -1091,10 +1089,6 @@
                 };
 
                 appState.emails.lotes.unshift(loteUnicoAssinadas);
-            }
-
-            if (!appState.emails.abertos.includes(loteUnicoAssinadas.idLote)) {
-                appState.emails.abertos.push(loteUnicoAssinadas.idLote);
             }
 
             reordenarEAtualizarLotes('emails');
@@ -1426,7 +1420,6 @@
                             itens: itensCards
                         };
                         appState.cards.lotes.unshift(novoLote);
-                        appState.cards.abertos.push(novoLote.idLote);
                         reordenarEAtualizarLotes('cards');
                         localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(appState.cards.abertos));
                         renderizarTodosLotes('cards');
@@ -1457,7 +1450,7 @@
 
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
-                const cAbertos = dadosCards.abertos && dadosCards.abertos.length > 0 ? dadosCards.abertos : cLotes.map(l => l.idLote);
+                const cAbertos = dadosCards.abertos && Array.isArray(dadosCards.abertos) ? dadosCards.abertos : [];
                 const cOcultar = dadosCards.ocultar !== undefined ? dadosCards.ocultar : false;
                 const cUltimo = dadosCards.ultimo || null;
 
@@ -1469,7 +1462,7 @@
 
                 const eLotes = dadosEmails.lotes || [];
                 const eUsados = dadosEmails.usados || [];
-                const eAbertos = dadosEmails.abertos && dadosEmails.abertos.length > 0 ? dadosEmails.abertos : eLotes.map(l => l.idLote);
+                const eAbertos = dadosEmails.abertos && Array.isArray(dadosEmails.abertos) ? dadosEmails.abertos : [];
                 const eOcultar = dadosEmails.ocultar !== undefined ? dadosEmails.ocultar : false;
                 const eOcultarVirgens = dadosEmails.ocultarVirgens !== undefined ? dadosEmails.ocultarVirgens : false;
                 const eOcultarSuspensas = dadosEmails.ocultarSuspensas !== undefined ? dadosEmails.ocultarSuspensas : false;
