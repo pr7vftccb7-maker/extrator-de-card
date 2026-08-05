@@ -318,6 +318,10 @@
             border-left: 4px solid #E50914;
         }
 
+        tr.linha-oculta {
+            display: none !important;
+        }
+
         .btn-copiar {
             background-color: #E50914;
             color: white;
@@ -514,20 +518,88 @@
         .nav-item.active {
             color: #E50914;
         }
+
+        /* MODAL CUSTOMIZADO DARK */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .modal-box {
+            background: #222222;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 20px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+        .modal-titulo {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .modal-texto {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+        .modal-botoes {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .btn-modal {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-modal-cancelar {
+            background: #333333;
+            color: #ccc;
+        }
+        .btn-modal-confirmar {
+            background: #E50914;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<div id="painelSelecao" class="painel-selecao-flutuante">
-    <span id="txtQtdSelecionados">0 sel.</span>
-    <button class="btn-copiar-selecionados" onclick="copiarItensSelecionados()">Copiar</button>
-    <button class="btn-apagar-selecionados" onclick="apagarItensSelecionados()">Apagar</button>
-    <button class="btn-cancelar-selecao" onclick="limparSelecao()">✕</button>
+<!-- MODAL DARK -->
+<div id="customModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-titulo" id="modalTitulo">Confirmação</div>
+        <div class="modal-texto" id="modalTexto">Tem certeza que deseja prosseguir?</div>
+        <div class="modal-botoes">
+            <button class="btn-modal btn-modal-cancelar" id="btnModalCancelar">Cancelar</button>
+            <button class="btn-modal btn-modal-confirmar" id="btnModalConfirmar">Confirmar</button>
+        </div>
+    </div>
 </div>
 
-<input type="file" id="fileImportGlobal" style="display: none;" accept=".json,.txt" onchange="importarBackup(event)">
+<div id="painelSelecao" class="painel-selecao-flutuante">
+    <span id="txtQtdSelecionados">0 sel.</span>
+    <button class="btn-copiar-selecionados" id="btnCopiarSel">Copiar</button>
+    <button class="btn-apagar-selecionados" id="btnApagarSel">Apagar</button>
+    <button class="btn-cancelar-selecao" id="btnCancelarSel">✕</button>
+</div>
+
+<input type="file" id="fileImportGlobal" style="display: none;" accept=".json,.txt">
 
 <!-- VIEW 1: CARTÕES -->
 <div id="view-cards" class="view active">
@@ -542,14 +614,14 @@
 
         <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
         <textarea id="entradaDadosCards" placeholder="Cole seus cartões aqui..."></textarea>
-        <button class="btn-processar" onclick="adicionarLote('cards')">Importar Cartões</button>
+        <button class="btn-processar" id="btnImportarCards">Importar Cartões</button>
 
         <div class="painel-ferramentas">
-            <input type="text" id="campoPesquisaCards" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)..." oninput="filtrarItens('cards')">
+            <input type="text" id="campoPesquisaCards" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)...">
             <div class="grupo-botoes-filtros">
-                <button id="btnOcultarUsadosCards" class="btn-filtro-usados" onclick="alternarFiltroCards()">Ocultar Usados</button>
-                <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="dispararSeletorArquivo()">⬆️ Restaurar</button>
+                <button id="btnOcultarUsadosCards" class="btn-filtro-usados">Ocultar Usados</button>
+                <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
+                <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
         </div>
 
@@ -570,17 +642,17 @@
 
         <p class="instrucoes">Cole a lista no formato <code>EMAIL:SENHA</code> ou <code>EMAIL|SENHA</code>:</p>
         <textarea id="entradaDadosEmails" placeholder="Cole seus emails/logins aqui..."></textarea>
-        <button class="btn-processar" onclick="adicionarLote('emails')">Importar Emails</button>
+        <button class="btn-processar" id="btnImportarEmails">Importar Emails</button>
 
         <div class="painel-ferramentas">
-            <input type="text" id="campoPesquisaEmails" class="input-pesquisa" placeholder="🔍 Buscar por email..." oninput="filtrarItens('emails')">
+            <input type="text" id="campoPesquisaEmails" class="input-pesquisa" placeholder="🔍 Buscar por email...">
             <div class="grupo-botoes-filtros">
-                <button id="btnOcultarUsadosEmails" class="btn-filtro-usados" onclick="alternarFiltroEmails('usados')">Ocultar Usados</button>
-                <button id="btnOcultarVirgens" class="btn-filtro-usados" onclick="alternarFiltroEmails('virgens')">Ocultar Virgens</button>
-                <button id="btnOcultarSuspensas" class="btn-filtro-usados" onclick="alternarFiltroEmails('suspensas')">Ocultar Suspensas</button>
-                <button id="btnOcultarAssinadas" class="btn-filtro-usados" onclick="alternarFiltroEmails('assinadas')">Ocultar Assinadas</button>
-                <button class="btn-backup" onclick="exportarBackup()">⬇️ Backup</button>
-                <button class="btn-backup" onclick="dispararSeletorArquivo()">⬆️ Restaurar</button>
+                <button id="btnOcultarUsadosEmails" class="btn-filtro-usados">Ocultar Usados</button>
+                <button id="btnOcultarVirgens" class="btn-filtro-usados">Ocultar Virgens</button>
+                <button id="btnOcultarSuspensas" class="btn-filtro-usados">Ocultar Suspensas</button>
+                <button id="btnOcultarAssinadas" class="btn-filtro-usados">Ocultar Assinadas</button>
+                <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
+                <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
         </div>
 
@@ -589,11 +661,11 @@
 </div>
 
 <nav class="bottom-nav">
-    <button class="nav-item active" id="nav-btn-cards" onclick="mudarAba('cards')">
+    <button class="nav-item active" id="nav-btn-cards">
         <i>💳</i>
         <span>Cartões</span>
     </button>
-    <button class="nav-item" id="nav-btn-emails" onclick="mudarAba('emails')">
+    <button class="nav-item" id="nav-btn-emails">
         <i>📧</i>
         <span>Emails</span>
     </button>
@@ -601,7 +673,6 @@
 
 <script>
     const CHAVES = {
-        scroll: 'posicao_scroll_v10',
         cards: {
             lotes: 'lotes_cartoes_geral',
             usados: 'botoes_usados_cartoes_geral',
@@ -656,6 +727,52 @@
     let modoSelecaoAtivo = false;
     let itensSelecionados = new Map(); 
     let timerPressionar = null;
+    let acaoModalPendente = null;
+
+    // --- UTILITÁRIOS ---
+    function copiarParaAreaTransferencia(texto) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(texto);
+        } else {
+            // Fallback para contextos não-seguros
+            const areaTexto = document.createElement("textarea");
+            areaTexto.value = texto;
+            areaTexto.style.position = "fixed";
+            areaTexto.style.left = "-999999px";
+            document.body.appendChild(areaTexto);
+            areaTexto.focus();
+            areaTexto.select();
+            return new Promise((res, rej) => {
+                document.execCommand('copy') ? res() : rej();
+                areaTexto.remove();
+            });
+        }
+    }
+
+    function mostrarModal(titulo, texto, aoConfirmar) {
+        document.getElementById('modalTitulo').innerText = titulo;
+        document.getElementById('modalTexto').innerText = texto;
+        document.getElementById('customModal').style.display = 'flex';
+        acaoModalPendente = aoConfirmar;
+    }
+
+    function fecharModal() {
+        document.getElementById('customModal').style.display = 'none';
+        acaoModalPendente = null;
+    }
+
+    function mostrarStatus(mensagem) {
+        const el = document.getElementById('statusScroll');
+        el.innerText = mensagem;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    function gerarDataHoraFormatada() {
+        const agora = new Date();
+        return agora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' • ' + 
+               agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
 
     function reordenarEAtualizarLotes(tipo) {
         let alterou = false;
@@ -675,18 +792,53 @@
         }
     }
 
+    // --- CARREGAMENTO INICIAL ---
     window.addEventListener('DOMContentLoaded', () => {
         reordenarEAtualizarLotes('cards');
         reordenarEAtualizarLotes('emails');
 
+        configurarEventosGerais();
         mudarAba(appState.abaAtiva, false);
+        
         atualizarBotaoFiltroVisual('cards');
         atualizarBotaoFiltroVisual('emails');
+        
         renderizarTodosLotes('cards');
         renderizarTodosLotes('emails');
 
         setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
     });
+
+    function configurarEventosGerais() {
+        document.getElementById('nav-btn-cards').onclick = () => mudarAba('cards');
+        document.getElementById('nav-btn-emails').onclick = () => mudarAba('emails');
+
+        document.getElementById('btnImportarCards').onclick = () => adicionarLote('cards');
+        document.getElementById('btnImportarEmails').onclick = () => adicionarLote('emails');
+
+        document.getElementById('campoPesquisaCards').oninput = () => filtrarItens('cards');
+        document.getElementById('campoPesquisaEmails').oninput = () => filtrarItens('emails');
+
+        document.getElementById('btnOcultarUsadosCards').onclick = () => alternarFiltroCards();
+        document.getElementById('btnOcultarUsadosEmails').onclick = () => alternarFiltroEmails('usados');
+        document.getElementById('btnOcultarVirgens').onclick = () => alternarFiltroEmails('virgens');
+        document.getElementById('btnOcultarSuspensas').onclick = () => alternarFiltroEmails('suspensas');
+        document.getElementById('btnOcultarAssinadas').onclick = () => alternarFiltroEmails('assinadas');
+
+        document.querySelectorAll('.btn-exp-backup').forEach(b => b.onclick = exportarBackup);
+        document.querySelectorAll('.btn-imp-backup').forEach(b => b.onclick = () => document.getElementById('fileImportGlobal').click());
+        document.getElementById('fileImportGlobal').onchange = importarBackup;
+
+        document.getElementById('btnCopiarSel').onclick = copiarItensSelecionados;
+        document.getElementById('btnApagarSel').onclick = apagarItensSelecionados;
+        document.getElementById('btnCancelarSel').onclick = limparSelecao;
+
+        document.getElementById('btnModalCancelar').onclick = fecharModal;
+        document.getElementById('btnModalConfirmar').onclick = () => {
+            if (acaoModalPendente) acaoModalPendente();
+            fecharModal();
+        };
+    }
 
     function mudarAba(aba, focarUltimo = true) {
         limparSelecao();
@@ -715,26 +867,35 @@
         }
     }
 
-    function iniciarToqueSelecao(elementoTr, idUnico, textoCopiar, idLote, idItem) {
-        timerPressionar = setTimeout(() => {
-            modoSelecaoAtivo = true;
-            alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem);
-        }, 400); 
-    }
+    // --- SELEÇÃO MOBILE / TOUCH OTIMIZADA ---
+    function vincularEventosLinha(tr, idUnico, textToCopy, idLote, idItem) {
+        const aoIniciarToque = () => {
+            timerPressionar = setTimeout(() => {
+                modoSelecaoAtivo = true;
+                alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
+            }, 400);
+        };
 
-    function cancelarToqueSelecao() {
-        if (timerPressionar) {
-            clearTimeout(timerPressionar);
-            timerPressionar = null;
-        }
-    }
+        const aoCancelarToque = () => {
+            if (timerPressionar) {
+                clearTimeout(timerPressionar);
+                timerPressionar = null;
+            }
+        };
 
-    function clicarItemLinha(elementoTr, idUnico, textoCopiar, idLote, idItem, e) {
-        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+        tr.addEventListener('mousedown', aoIniciarToque);
+        tr.addEventListener('mouseup', aoCancelarToque);
+        tr.addEventListener('touchstart', aoIniciarToque, { passive: true });
+        tr.addEventListener('touchend', aoCancelarToque);
+        tr.addEventListener('touchmove', aoCancelarToque, { passive: true }); // Cancela selecao se o usuario ROLAR a tela
+        tr.addEventListener('touchcancel', aoCancelarToque);
 
-        if (modoSelecaoAtivo) {
-            alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem);
-        }
+        tr.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
+            if (modoSelecaoAtivo) {
+                alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
+            }
+        });
     }
 
     function alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem) {
@@ -755,8 +916,7 @@
 
     function atualizarPainelSelecao() {
         const painel = document.getElementById('painelSelecao');
-        const txt = document.getElementById('txtQtdSelecionados');
-        txt.innerText = `${itensSelecionados.size} sel.`;
+        document.getElementById('txtQtdSelecionados').innerText = `${itensSelecionados.size} sel.`;
         painel.style.display = 'flex';
     }
 
@@ -784,7 +944,7 @@
             }
         });
 
-        navigator.clipboard.writeText(textoParaClipboard.trim()).then(() => {
+        copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
             localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
 
             if (idsArray.length > 0) {
@@ -793,28 +953,30 @@
                 localStorage.setItem(CHAVES[tipo].ultimo, ultimoId);
             }
 
-            const idsSelecionadosAnteriores = Array.from(itensSelecionados.keys());
+            // Atualização CIRÚRGICA sem recriar DOM
+            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado`).forEach(b => b.classList.remove('ultimo-copiado'));
 
-            renderizarTodosLotes(tipo);
-
-            idsSelecionadosAnteriores.forEach(idUnico => {
-                const itemDados = itensSelecionados.get(idUnico);
-                const novoTr = document.getElementById(`tr_${idUnico}`);
-                if (novoTr && itemDados) {
-                    novoTr.classList.add('item-selecionado');
-                    itemDados.elementoTr = novoTr;
+            idsArray.forEach(id => {
+                const tr = document.getElementById(`tr_${id}`);
+                if (tr) {
+                    const btn = tr.querySelector('.btn-copiar');
+                    if (btn) {
+                        btn.innerText = 'Usado!';
+                        btn.classList.add('usado');
+                        if (id === appState[tipo].ultimo) btn.classList.add('ultimo-copiado');
+                    }
                 }
             });
 
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
             atualizarPainelSelecao();
-        }).catch(err => alert('❌ Erro ao acessar a área de transferência.'));
+        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
     function apagarItensSelecionados() {
         if (itensSelecionados.size === 0) return;
 
-        if (confirm(`Deseja apagar os ${itensSelecionados.size} itens selecionados?`)) {
+        mostrarModal('Apagar Itens', `Deseja apagar os ${itensSelecionados.size} itens selecionados?`, () => {
             const tipo = appState.abaAtiva;
 
             itensSelecionados.forEach((val, idUnico) => {
@@ -826,33 +988,16 @@
             });
 
             reordenarEAtualizarLotes(tipo);
-
             localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
             localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
 
             renderizarTodosLotes(tipo);
             mostrarStatus('Itens removidos com sucesso!');
             limparSelecao();
-        }
+        });
     }
 
-    function mostrarStatus(mensagem) {
-        const el = document.getElementById('statusScroll');
-        el.innerText = mensagem;
-        el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 2000);
-    }
-
-    function gerarDataHoraFormatada() {
-        const agora = new Date();
-        const dia = String(agora.getDate()).padStart(2, '0');
-        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-        const mes = meses[agora.getMonth()];
-        const horas = String(agora.getHours()).padStart(2, '0');
-        const minutos = String(agora.getMinutes()).padStart(2, '0');
-        return `${dia} ${mes} • ${horas}:${minutos}`;
-    }
-
+    // --- OPERAÇÕES DE LOTE ---
     function adicionarLote(tipo) {
         const campo = document.getElementById(tipo === 'cards' ? 'entradaDadosCards' : 'entradaDadosEmails');
         let texto = campo.value.trim();
@@ -866,14 +1011,11 @@
             try {
                 const parsedJson = JSON.parse(texto);
                 if (parsedJson.lotes && Array.isArray(parsedJson.lotes)) {
-                    parsedJson.lotes.forEach(loteImportado => {
-                        appState[tipo].lotes.unshift(loteImportado);
-                    });
+                    parsedJson.lotes.forEach(loteImportado => appState[tipo].lotes.unshift(loteImportado));
                     reordenarEAtualizarLotes(tipo);
-                    localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
                     renderizarTodosLotes(tipo);
                     campo.value = '';
-                    mostrarStatus('Lotes importados via texto com sucesso!');
+                    mostrarStatus('Lotes importados com sucesso!');
                     return;
                 }
             } catch (err) {}
@@ -884,10 +1026,7 @@
         let contador = 1;
 
         linhas.forEach(linha => {
-            let l = linha.trim();
-            if (!l) return;
-
-            l = l.replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
+            let l = linha.trim().replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
             if (!l) return;
 
             if (tipo === 'cards') {
@@ -922,11 +1061,10 @@
             return;
         }
 
-        const bannerImg = BANNERS[appState[tipo].lotes.length % BANNERS.length];
         const novoLote = {
             idLote: Date.now(),
             nome: `${tipo === 'cards' ? 'Cards' : 'Logins'} • ${gerarDataHoraFormatada()}`,
-            banner: bannerImg,
+            banner: BANNERS[appState[tipo].lotes.length % BANNERS.length],
             itens: itens
         };
 
@@ -958,19 +1096,18 @@
         if (elemento) elemento.classList.toggle('aberto');
     }
 
-    function excluirLote(event, tipo, idLote) {
-        event.stopPropagation();
-        if (confirm('Deseja apagar esta extração?')) {
+    function excluirLote(tipo, idLote) {
+        mostrarModal('Apagar Extração', 'Deseja apagar esta extração inteira?', () => {
             appState[tipo].lotes = appState[tipo].lotes.filter(l => l.idLote !== idLote);
             appState[tipo].abertos = appState[tipo].abertos.filter(id => id !== idLote);
             localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
             localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
             renderizarTodosLotes(tipo);
-        }
+            mostrarStatus('Extração removida!');
+        });
     }
 
-    function copiarTodosCartoesLote(event, idLote) {
-        event.stopPropagation();
+    function copiarTodosCartoesLote(idLote) {
         const lote = appState.cards.lotes.find(l => l.idLote === idLote);
         if (!lote || !lote.itens || lote.itens.length === 0) return;
 
@@ -995,25 +1132,19 @@
             return;
         }
 
-        navigator.clipboard.writeText(textoCompleto.trim()).then(() => {
+        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
             localStorage.setItem(CHAVES.cards.usados, JSON.stringify(appState.cards.usados));
             renderizarTodosLotes('cards');
             mostrarStatus(`✅ ${quantidadeCopiada} cartões visíveis copiados!`);
-        }).catch(err => {
-            alert('❌ Erro ao acessar a área de transferência.');
-        });
+        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
-    function excluirItem(event, tipo, idLote, idItem) {
-        event.stopPropagation();
-        if (confirm('Deseja remover este item?')) {
+    function excluirItem(tipo, idLote, idItem) {
+        mostrarModal('Apagar Item', 'Deseja remover este item?', () => {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
             if (lote) {
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
-                
-                lote.itens.forEach((item, index) => {
-                    item.idItem = index + 1;
-                });
+                reordenarEAtualizarLotes(tipo);
 
                 const idUnico = `item_${tipo}_${idLote}_${idItem}`;
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
@@ -1022,14 +1153,12 @@
                 localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
                 
                 renderizarTodosLotes(tipo);
-                mostrarStatus('Item removido e lista reordenada!');
+                mostrarStatus('Item removido!');
             }
-        }
+        });
     }
 
-    function copiarAssinadasDoLote(event, idLote) {
-        event.stopPropagation();
-
+    function copiarAssinadasDoLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
@@ -1055,7 +1184,7 @@
             }
         });
 
-        navigator.clipboard.writeText(textoParaClipboard.trim()).then(() => {
+        copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
             localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
 
             let loteUnicoAssinadas = appState.emails.lotes.find(l => l.nome.startsWith('ASSINADAS USADAS'));
@@ -1080,11 +1209,10 @@
                     textoCompleto: item.textoCompleto
                 }));
 
-                const bannerImg = BANNERS[appState.emails.lotes.length % BANNERS.length];
                 loteUnicoAssinadas = {
                     idLote: Date.now(),
                     nome: `ASSINADAS USADAS`,
-                    banner: bannerImg,
+                    banner: BANNERS[appState.emails.lotes.length % BANNERS.length],
                     itens: itensNovosLote
                 };
 
@@ -1092,13 +1220,12 @@
             }
 
             reordenarEAtualizarLotes('emails');
-            localStorage.setItem(CHAVES.emails.abertos, JSON.stringify(appState.emails.abertos));
-
             renderizarTodosLotes('emails');
             mostrarStatus(`✅ Contas adicionadas às Assinadas Usadas!`);
-        }).catch(err => alert('❌ Erro ao acessar a área de transferência.'));
+        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
+    // --- FILTROS ---
     function alternarFiltroCards() {
         appState.cards.ocultar = !appState.cards.ocultar;
         localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(appState.cards.ocultar));
@@ -1127,28 +1254,25 @@
     function atualizarBotaoFiltroVisual(tipo) {
         if (tipo === 'cards') {
             const btn = document.getElementById('btnOcultarUsadosCards');
-            if (appState.cards.ocultar) {
-                btn.innerText = 'Mostrar Usados'; btn.classList.add('ativo');
-            } else {
-                btn.innerText = 'Ocultar Usados'; btn.classList.remove('ativo');
-            }
+            btn.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
+            btn.classList.toggle('ativo', appState.cards.ocultar);
         } else {
             const btnU = document.getElementById('btnOcultarUsadosEmails');
             const btnV = document.getElementById('btnOcultarVirgens');
             const btnS = document.getElementById('btnOcultarSuspensas');
             const btnA = document.getElementById('btnOcultarAssinadas');
 
-            if (appState.emails.ocultar) { btnU.innerText = 'Mostrar Usados'; btnU.classList.add('ativo'); } 
-            else { btnU.innerText = 'Ocultar Usados'; btnU.classList.remove('ativo'); }
+            btnU.innerText = appState.emails.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
+            btnU.classList.toggle('ativo', appState.emails.ocultar);
 
-            if (appState.emails.ocultarVirgens) { btnV.innerText = 'Mostrar Virgens'; btnV.classList.add('ativo'); } 
-            else { btnV.innerText = 'Ocultar Virgens'; btnV.classList.remove('ativo'); }
+            btnV.innerText = appState.emails.ocultarVirgens ? 'Mostrar Virgens' : 'Ocultar Virgens';
+            btnV.classList.toggle('ativo', appState.emails.ocultarVirgens);
 
-            if (appState.emails.ocultarSuspensas) { btnS.innerText = 'Mostrar Suspensas'; btnS.classList.add('ativo'); } 
-            else { btnS.innerText = 'Ocultar Suspensas'; btnS.classList.remove('ativo'); }
+            btnS.innerText = appState.emails.ocultarSuspensas ? 'Mostrar Suspensas' : 'Ocultar Suspensas';
+            btnS.classList.toggle('ativo', appState.emails.ocultarSuspensas);
 
-            if (appState.emails.ocultarAssinadas) { btnA.innerText = 'Mostrar Assinadas'; btnA.classList.add('ativo'); } 
-            else { btnA.innerText = 'Ocultar Assinadas'; btnA.classList.remove('ativo'); }
+            btnA.innerText = appState.emails.ocultarAssinadas ? 'Mostrar Assinadas' : 'Ocultar Assinadas';
+            btnA.classList.toggle('ativo', appState.emails.ocultarAssinadas);
         }
     }
 
@@ -1177,11 +1301,8 @@
                 if (!trElemento) return;
 
                 const atendePesquisa = termo === '' || item.principal.toLowerCase().includes(termo);
-                
                 let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado;
-                let atendeFiltroVirgens = true;
-                let atendeFiltroSuspensas = true;
-                let atendeFiltroAssinadas = true;
+                let atendeFiltroVirgens = true, atendeFiltroSuspensas = true, atendeFiltroAssinadas = true;
 
                 if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
@@ -1209,6 +1330,7 @@
         });
     }
 
+    // --- RENDERIZAÇÃO PRINCIPAL ---
     function renderizarTodosLotes(tipo) {
         const area = document.getElementById(tipo === 'cards' ? 'areaLotesCards' : 'areaLotesEmails');
         area.innerHTML = '';
@@ -1219,46 +1341,69 @@
             divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
             divLote.id = `lote_${tipo}_${lote.idLote}`;
 
-            let thead = tipo === 'cards' 
-                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`
-                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
+            // Banner
+            const bannerDiv = document.createElement('div');
+            bannerDiv.className = 'banner-lote';
+            bannerDiv.style.backgroundImage = `url('${lote.banner}')`;
+            bannerDiv.onclick = () => alternarLote(tipo, lote.idLote);
 
-            let botoesCabecalho = '';
-            
+            bannerDiv.innerHTML = `
+                <div class="banner-overlay"></div>
+                <div class="cabecalho-lote">
+                    <div class="info-lote">
+                        <span class="icone-seta">▼</span>
+                        <span>${lote.nome}</span>
+                        <span class="qtd-badge">${lote.itens.length}</span>
+                    </div>
+                    <div class="grupo-botoes-cabecalho" id="botoesCab_${lote.idLote}"></div>
+                </div>
+            `;
+            divLote.appendChild(bannerDiv);
+
+            // Inserir botões no cabeçalho com EventListeners Seguros
+            const btnGrupo = bannerDiv.querySelector(`#botoesCab_${lote.idLote}`);
             if (tipo === 'cards') {
-                botoesCabecalho = `
-                    <button class="btn-acao-lote btn-copiar-lote" title="Copiar apenas os cartões visíveis deste lote" onclick="copiarTodosCartoesLote(event, ${lote.idLote})">Copiar Todas</button>
-                    <button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>
-                `;
+                const btnCopiarT = document.createElement('button');
+                btnCopiarT.className = 'btn-acao-lote btn-copiar-lote';
+                btnCopiarT.innerText = 'Copiar Todas';
+                btnCopiarT.onclick = (e) => { e.stopPropagation(); copiarTodosCartoesLote(lote.idLote); };
+
+                const btnApagarL = document.createElement('button');
+                btnApagarL.className = 'btn-acao-lote';
+                btnApagarL.innerText = 'Apagar';
+                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
+
+                btnGrupo.appendChild(btnCopiarT);
+                btnGrupo.appendChild(btnApagarL);
             } else {
-                botoesCabecalho = `<button class="btn-acao-lote" onclick="excluirLote(event, '${tipo}', ${lote.idLote})">Apagar</button>`;
                 if (!lote.nome.startsWith('ASSINADAS USADAS')) {
-                    botoesCabecalho = `
-                        <button class="btn-acao-lote btn-copiar-lote" title="Copiar e enviar para o card único" onclick="copiarAssinadasDoLote(event, ${lote.idLote})">Copiar Assinadas</button>
-                        ${botoesCabecalho}
-                    `;
+                    const btnCopiarA = document.createElement('button');
+                    btnCopiarA.className = 'btn-acao-lote btn-copiar-lote';
+                    btnCopiarA.innerText = 'Copiar Assinadas';
+                    btnCopiarA.onclick = (e) => { e.stopPropagation(); copiarAssinadasDoLote(lote.idLote); };
+                    btnGrupo.appendChild(btnCopiarA);
                 }
+                const btnApagarL = document.createElement('button');
+                btnApagarL.className = 'btn-acao-lote';
+                btnApagarL.innerText = 'Apagar';
+                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
+                btnGrupo.appendChild(btnApagarL);
             }
 
-            let html = `
-                <div class="banner-lote" style="background-image: url('${lote.banner}');" onclick="alternarLote('${tipo}', ${lote.idLote})">
-                    <div class="banner-overlay"></div>
-                    <div class="cabecalho-lote">
-                        <div class="info-lote">
-                            <span class="icone-seta">▼</span>
-                            <span>${lote.nome}</span>
-                            <span class="qtd-badge">${lote.itens.length}</span>
-                        </div>
-                        <div class="grupo-botoes-cabecalho">
-                            ${botoesCabecalho}
-                        </div>
-                    </div>
-                </div>
-                <div class="conteudo-lote">
-                    <div class="tabela-container">
-                        <table>
-                            <thead>${thead}</thead>
-                            <tbody>`;
+            // Conteúdo
+            const conteudoDiv = document.createElement('div');
+            conteudoDiv.className = 'conteudo-lote';
+            
+            const tabelaContainer = document.createElement('div');
+            tabelaContainer.className = 'tabela-container';
+            
+            const tabela = document.createElement('table');
+            const theadText = tipo === 'cards' 
+                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`
+                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
+            tabela.innerHTML = `<thead>${theadText}</thead>`;
+
+            const tbody = document.createElement('tbody');
 
             lote.itens.forEach((item, index) => {
                 const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
@@ -1271,56 +1416,62 @@
                 if (jaFoiUsado) { classeStatus += ' usado'; textoBotao = 'Usado!'; }
                 if (ehUltimo) { classeStatus += ' ultimo-copiado'; }
 
-                const classeSecundaria = index > 0 ? 'linha-secundaria' : '';
-                const textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto.replace(/'/g, "\\'");
-                const botaoExcluirHtml = `<button class="btn-excluir-item" onclick="excluirItem(event, '${tipo}', ${lote.idLote}, ${item.idItem})">🗑️</button>`;
+                const tr = document.createElement('tr');
+                tr.id = `tr_${idUnico}`;
+                tr.className = `linha-item ${index > 0 ? 'linha-secundaria' : ''}`;
 
-                const eventosTr = `
-                    onmousedown="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem})"
-                    onmouseup="cancelarToqueSelecao()"
-                    ontouchstart="iniciarToqueSelecao(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem})"
-                    ontouchend="cancelarToqueSelecao()"
-                    onclick="clicarItemLinha(this, '${idUnico}', '${textToCopy}', ${lote.idLote}, ${item.idItem}, event)"
-                `;
+                const textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto;
 
-                if(tipo === 'cards') {
-                    html += `
-                        <tr id="tr_${idUnico}" class="linha-item ${classeSecundaria}" ${eventosTr}>
-                            <td><span class="badge-id">${item.idItem}</span></td>
-                            <td>
-                                <span class="cartao-num">${item.principal}</span>
-                                <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${tipo}', '${textToCopy}', event)">${textoBotao}</button>
-                            </td>
-                            <td>${item.secundario}</td>
-                            <td>${item.terciario}</td>
-                            <td>${botaoExcluirHtml}</td>
-                        </tr>`;
+                vincularEventosLinha(tr, idUnico, textToCopy, lote.idLote, item.idItem);
+
+                if (tipo === 'cards') {
+                    tr.innerHTML = `
+                        <td><span class="badge-id">${item.idItem}</span></td>
+                        <td>
+                            <span class="cartao-num">${item.principal}</span>
+                            <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
+                        </td>
+                        <td>${item.secundario}</td>
+                        <td>${item.terciario}</td>
+                        <td><button class="btn-excluir-item">🗑️</button></td>
+                    `;
+
+                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e);
+                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 } else {
                     const emailChave = item.principal.toLowerCase();
                     const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
-                    html += `
-                        <tr id="tr_${idUnico}" class="linha-item ${classeSecundaria}" ${eventosTr}>
-                            <td><span class="badge-id">${item.idItem}</span></td>
-                            <td class="email-text">${item.principal}</td>
-                            <td class="email-text">${item.secundario}</td>
-                            <td>
-                                <select class="status-select" onchange="mudarStatusItemEmail('${item.principal.replace(/'/g, "\\'")}', this.value)">
-                                    <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
-                                    <option value="virgem" ${statusAtual === 'virgem' ? 'selected' : ''}>Virgem</option>
-                                    <option value="suspensa" ${statusAtual === 'suspensa' ? 'selected' : ''}>Suspensa</option>
-                                    <option value="assinada" ${statusAtual === 'assinada' ? 'selected' : ''}>Assinada</option>
-                                </select>
-                            </td>
-                            <td>
-                                <button class="${classeStatus}" data-id="${idUnico}" onclick="copiarTexto(this, '${tipo}', '${textToCopy}', event)">${textoBotao}</button>
-                                ${botaoExcluirHtml}
-                            </td>
-                        </tr>`;
+
+                    tr.innerHTML = `
+                        <td><span class="badge-id">${item.idItem}</span></td>
+                        <td class="email-text">${item.principal}</td>
+                        <td class="email-text">${item.secundario}</td>
+                        <td>
+                            <select class="status-select">
+                                <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
+                                <option value="virgem" ${statusAtual === 'virgem' ? 'selected' : ''}>Virgem</option>
+                                <option value="suspensa" ${statusAtual === 'suspensa' ? 'selected' : ''}>Suspensa</option>
+                                <option value="assinada" ${statusAtual === 'assinada' ? 'selected' : ''}>Assinada</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
+                            <button class="btn-excluir-item">🗑️</button>
+                        </td>
+                    `;
+
+                    tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(item.principal, e.target.value);
+                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e);
+                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 }
+
+                tbody.appendChild(tr);
             });
 
-            html += `</tbody></table></div></div>`;
-            divLote.innerHTML = html;
+            tabela.appendChild(tbody);
+            tabelaContainer.appendChild(tabela);
+            conteudoDiv.appendChild(tabelaContainer);
+            divLote.appendChild(conteudoDiv);
             area.appendChild(divLote);
         });
 
@@ -1329,9 +1480,10 @@
 
     function copiarTexto(botao, tipo, texto, e) {
         if (e) e.stopPropagation();
-        navigator.clipboard.writeText(texto).then(() => {
+        copiarParaAreaTransferencia(texto).then(() => {
             const id = botao.getAttribute('data-id');
 
+            // Atualização CIRÚRGICA sem recriar DOM inteiro
             document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado`).forEach(btn => {
                 btn.classList.remove('ultimo-copiado');
             });
@@ -1355,6 +1507,7 @@
         }).catch(err => console.error('Erro ao copiar: ', err));
     }
 
+    // --- BACKUP & RESTAURAÇÃO ---
     function exportarBackup() {
         const backupData = {
             versao: '10.0',
@@ -1368,16 +1521,11 @@
         
         const a = document.createElement('a');
         a.href = url;
-        const nomeArquivo = `bklogins_full_backup_${gerarDataHoraFormatada().replace(/[^\w]/g, '-')}.json`;
-        a.download = nomeArquivo;
+        a.download = `bklogins_full_backup_${gerarDataHoraFormatada().replace(/[^\w]/g, '-')}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
-
-    function dispararSeletorArquivo() {
-        document.getElementById('fileImportGlobal').click();
     }
 
     function importarBackup(event) {
@@ -1421,7 +1569,6 @@
                         };
                         appState.cards.lotes.unshift(novoLote);
                         reordenarEAtualizarLotes('cards');
-                        localStorage.setItem(CHAVES.cards.abertos, JSON.stringify(appState.cards.abertos));
                         renderizarTodosLotes('cards');
                         alert(`✅ Arquivo de texto importado com ${itensCards.length} cartões!`);
                     } else {
@@ -1431,22 +1578,8 @@
                     return;
                 }
 
-                let dadosCards = {};
-                let dadosEmails = {};
-
-                if (data.cards) {
-                    dadosCards = data.cards;
-                } else if (data.lotes && Array.isArray(data.lotes)) {
-                    dadosCards = { lotes: data.lotes, usados: data.usados || [], abertos: data.abertos || [] };
-                } else if (Array.isArray(data)) {
-                    dadosCards = { lotes: data, usados: [], abertos: [] };
-                } else {
-                    dadosCards = data;
-                }
-
-                if (data.emails) {
-                    dadosEmails = data.emails;
-                }
+                let dadosCards = data.cards || (data.lotes && Array.isArray(data.lotes) ? { lotes: data.lotes } : (Array.isArray(data) ? { lotes: data } : data));
+                let dadosEmails = data.emails || {};
 
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
@@ -1480,21 +1613,8 @@
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
-                appState.cards.lotes = cLotes;
-                appState.cards.usados = cUsados;
-                appState.cards.abertos = cAbertos;
-                appState.cards.ocultar = cOcultar;
-                appState.cards.ultimo = cUltimo;
-
-                appState.emails.lotes = eLotes;
-                appState.emails.usados = eUsados;
-                appState.emails.abertos = eAbertos;
-                appState.emails.ocultar = eOcultar;
-                appState.emails.ocultarVirgens = eOcultarVirgens;
-                appState.emails.ocultarSuspensas = eOcultarSuspensas;
-                appState.emails.ocultarAssinadas = eOcultarAssinadas;
-                appState.emails.status = eStatus;
-                appState.emails.ultimo = eUltimo;
+                appState.cards = { lotes: cLotes, usados: cUsados, abertos: cAbertos, ocultar: cOcultar, ultimo: cUltimo };
+                appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, status: eStatus, ultimo: eUltimo };
 
                 reordenarEAtualizarLotes('cards');
                 reordenarEAtualizarLotes('emails');
