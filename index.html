@@ -419,12 +419,10 @@
             border-color: #E50914;
         }
 
-        /* COMPACTAÇÃO / MINIMIZAÇÃO DE LOTES */
         .card-lote:not(.aberto) .conteudo-lote tr.linha-secundaria {
             display: none !important;
         }
 
-        /* Painel Flutuante de Seleção */
         .painel-selecao-flutuante {
             position: fixed;
             bottom: 65px;
@@ -537,7 +535,6 @@
             color: #E50914;
         }
 
-        /* MODAL CUSTOMIZADO DARK */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -598,7 +595,6 @@
 
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
-<!-- MODAL DARK -->
 <div id="customModal" class="modal-overlay">
     <div class="modal-box">
         <div class="modal-titulo" id="modalTitulo">Confirmação</div>
@@ -793,7 +789,6 @@
     let timerPressionar = null;
     let acaoModalPendente = null;
 
-    // --- UTILITÁRIOS ---
     function copiarParaAreaTransferencia(texto) {
         if (navigator.clipboard && window.isSecureContext) {
             return navigator.clipboard.writeText(texto);
@@ -855,7 +850,6 @@
         }
     }
 
-    // --- CARREGAMENTO INICIAL ---
     window.addEventListener('DOMContentLoaded', () => {
         reordenarEAtualizarLotes('cards');
         reordenarEAtualizarLotes('emails');
@@ -939,7 +933,6 @@
         }
     }
 
-    // --- SELEÇÃO MOBILE / TOUCH OTIMIZADA ---
     function vincularEventosLinha(tr, idUnico, textToCopy, idLote, idItem) {
         const aoIniciarToque = () => {
             timerPressionar = setTimeout(() => {
@@ -1075,7 +1068,6 @@
         });
     }
 
-    // --- PARSER DE DADOS/PESSOAS ---
     function extrairBlocosPessoas(texto) {
         const itens = [];
         let contador = 1;
@@ -1121,7 +1113,6 @@
         return itens;
     }
 
-    // --- OPERAÇÕES DE LOTE ---
     function adicionarLote(tipo) {
         const campoId = tipo === 'cards' ? 'entradaDadosCards' : (tipo === 'emails' ? 'entradaDadosEmails' : 'entradaDadosPessoas');
         const campo = document.getElementById(campoId);
@@ -1200,7 +1191,8 @@
 
         appState[tipo].lotes.unshift(novoLote);
         reordenarEAtualizarLotes(tipo);
-        
+        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+
         if (tipo === 'emails') {
             itens.forEach(item => {
                 const emailChave = item.principal.toLowerCase();
@@ -1355,7 +1347,6 @@
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
-    // --- FILTROS ---
     function alternarFiltroCards() {
         appState.cards.ocultar = !appState.cards.ocultar;
         localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(appState.cards.ocultar));
@@ -1472,7 +1463,6 @@
         });
     }
 
-    // --- RENDERIZAÇÃO PRINCIPAL ---
     function renderizarTodosLotes(tipo) {
         const areaId = tipo === 'cards' ? 'areaLotesCards' : (tipo === 'emails' ? 'areaLotesEmails' : 'areaLotesDados');
         const area = document.getElementById(areaId);
@@ -1484,7 +1474,6 @@
             divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
             divLote.id = `lote_${tipo}_${lote.idLote}`;
 
-            // Banner
             const bannerDiv = document.createElement('div');
             bannerDiv.className = 'banner-lote';
             bannerDiv.style.backgroundImage = `url('${lote.banner}')`;
@@ -1503,7 +1492,6 @@
             `;
             divLote.appendChild(bannerDiv);
 
-            // Inserir botões no cabeçalho
             const btnGrupo = bannerDiv.querySelector(`#botoesCab_${tipo}_${lote.idLote}`);
             if (tipo === 'cards') {
                 const btnCopiarT = document.createElement('button');
@@ -1539,7 +1527,6 @@
                 btnGrupo.appendChild(btnApagarL);
             }
 
-            // Conteúdo
             const conteudoDiv = document.createElement('div');
             conteudoDiv.className = 'conteudo-lote';
             
@@ -1614,7 +1601,6 @@
                     tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
                     tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 } else {
-                    // DADOS / PESSOAS
                     let classeCpf = 'btn-copiar-sec btn-cpf';
                     let textoCpf = 'CPF';
                     if (jaFoiUsado) { classeCpf += ' usado'; textoCpf = 'CPF!'; }
@@ -1657,12 +1643,10 @@
         copiarParaAreaTransferencia(texto).then(() => {
             const id = idUnico || botao.getAttribute('data-id');
 
-            // Remove destaque verde anterior
             document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(btn => {
                 btn.classList.remove('ultimo-copiado');
             });
 
-            // Se for na seção de Dados, atualiza AMBOS os botões da linha (CPF e Bloco)
             const tr = document.getElementById(`tr_${id}`);
             if (tr && tipo === 'dados') {
                 const btnBloco = tr.querySelector('.btn-copiar');
@@ -1699,7 +1683,6 @@
         }).catch(err => console.error('Erro ao copiar: ', err));
     }
 
-    // --- BACKUP & RESTAURAÇÃO ---
     function exportarBackup() {
         const backupData = {
             versao: '10.0',
