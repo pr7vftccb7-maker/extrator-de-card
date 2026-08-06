@@ -334,13 +334,31 @@
             transition: all 0.2s;
         }
         
-        .btn-copiar.usado {
+        .btn-copiar-sec {
+            background-color: #2b2b2b;
+            color: #ddd;
+            border: 1px solid #444;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 4px;
+            transition: all 0.2s;
+        }
+        .btn-copiar-sec:hover {
+            background-color: #444;
+            color: #fff;
+        }
+        
+        .btn-copiar.usado, .btn-copiar-sec.usado {
             background-color: #333 !important;
             color: #777 !important;
             font-weight: bold;
+            border-color: #333;
             cursor: default;
         }
-        .btn-copiar.ultimo-copiado {
+        .btn-copiar.ultimo-copiado, .btn-copiar-sec.ultimo-copiado {
             background-color: #34c759 !important;
             color: #ffffff !important;
             font-weight: bold;
@@ -660,6 +678,34 @@
     </div>
 </div>
 
+<!-- VIEW 3: DADOS / PESSOAS -->
+<div id="view-dados" class="view">
+    <div class="container">
+        <div class="netflix-header">
+            <div class="logo-grupo">
+                <div class="logo-bklogins">bklogins</div>
+                <div class="versao-tag">v10</div>
+            </div>
+            <div class="badge-sub">DADOS PRO</div>
+        </div>
+
+        <p class="instrucoes">Cole blocos de pessoas (ex: <code>PESSOA 1: • CPF: ... • NOME: ...</code>) ou no formato <code>CPF|NOME|NASC|SEXO</code>:</p>
+        <textarea id="entradaDadosPessoas" placeholder="Cole os blocos de dados aqui..."></textarea>
+        <button class="btn-processar" id="btnImportarDados">Importar Dados</button>
+
+        <div class="painel-ferramentas">
+            <input type="text" id="campoPesquisaDados" class="input-pesquisa" placeholder="🔍 Buscar por CPF ou Nome...">
+            <div class="grupo-botoes-filtros">
+                <button id="btnOcultarUsadosDados" class="btn-filtro-usados">Ocultar Usados</button>
+                <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
+                <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
+            </div>
+        </div>
+
+        <div id="areaLotesDados"></div>
+    </div>
+</div>
+
 <nav class="bottom-nav">
     <button class="nav-item active" id="nav-btn-cards">
         <i>💳</i>
@@ -668,6 +714,10 @@
     <button class="nav-item" id="nav-btn-emails">
         <i>📧</i>
         <span>Emails</span>
+    </button>
+    <button class="nav-item" id="nav-btn-dados">
+        <i>👤</i>
+        <span>Dados</span>
     </button>
 </nav>
 
@@ -690,6 +740,13 @@
             ocultarAssinadas: 'filtro_ocultar_assinadas_geral',
             status: 'status_emails_geral',
             ultimo: 'ultimo_copiado_emails_geral'
+        },
+        dados: {
+            lotes: 'lotes_dados_geral',
+            usados: 'botoes_usados_dados_geral',
+            abertos: 'lotes_abertos_dados_geral',
+            ocultar: 'filtro_ocultar_dados_geral',
+            ultimo: 'ultimo_copiado_dados_geral'
         },
         abaAtiva: 'aba_ativa_v10'
     };
@@ -721,6 +778,13 @@
             status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
             ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null
         },
+        dados: {
+            lotes: JSON.parse(localStorage.getItem(CHAVES.dados.lotes) || '[]'),
+            usados: JSON.parse(localStorage.getItem(CHAVES.dados.usados) || '[]'),
+            abertos: JSON.parse(localStorage.getItem(CHAVES.dados.abertos) || '[]'),
+            ocultar: JSON.parse(localStorage.getItem(CHAVES.dados.ocultar) || 'false'),
+            ultimo: localStorage.getItem(CHAVES.dados.ultimo) || null
+        },
         abaAtiva: localStorage.getItem(CHAVES.abaAtiva) || 'cards'
     };
 
@@ -734,7 +798,6 @@
         if (navigator.clipboard && window.isSecureContext) {
             return navigator.clipboard.writeText(texto);
         } else {
-            // Fallback para contextos não-seguros
             const areaTexto = document.createElement("textarea");
             areaTexto.value = texto;
             areaTexto.style.position = "fixed";
@@ -796,15 +859,18 @@
     window.addEventListener('DOMContentLoaded', () => {
         reordenarEAtualizarLotes('cards');
         reordenarEAtualizarLotes('emails');
+        reordenarEAtualizarLotes('dados');
 
         configurarEventosGerais();
         mudarAba(appState.abaAtiva, false);
         
         atualizarBotaoFiltroVisual('cards');
         atualizarBotaoFiltroVisual('emails');
+        atualizarBotaoFiltroVisual('dados');
         
         renderizarTodosLotes('cards');
         renderizarTodosLotes('emails');
+        renderizarTodosLotes('dados');
 
         setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
     });
@@ -812,18 +878,22 @@
     function configurarEventosGerais() {
         document.getElementById('nav-btn-cards').onclick = () => mudarAba('cards');
         document.getElementById('nav-btn-emails').onclick = () => mudarAba('emails');
+        document.getElementById('nav-btn-dados').onclick = () => mudarAba('dados');
 
         document.getElementById('btnImportarCards').onclick = () => adicionarLote('cards');
         document.getElementById('btnImportarEmails').onclick = () => adicionarLote('emails');
+        document.getElementById('btnImportarDados').onclick = () => adicionarLote('dados');
 
         document.getElementById('campoPesquisaCards').oninput = () => filtrarItens('cards');
         document.getElementById('campoPesquisaEmails').oninput = () => filtrarItens('emails');
+        document.getElementById('campoPesquisaDados').oninput = () => filtrarItens('dados');
 
         document.getElementById('btnOcultarUsadosCards').onclick = () => alternarFiltroCards();
         document.getElementById('btnOcultarUsadosEmails').onclick = () => alternarFiltroEmails('usados');
         document.getElementById('btnOcultarVirgens').onclick = () => alternarFiltroEmails('virgens');
         document.getElementById('btnOcultarSuspensas').onclick = () => alternarFiltroEmails('suspensas');
         document.getElementById('btnOcultarAssinadas').onclick = () => alternarFiltroEmails('assinadas');
+        document.getElementById('btnOcultarUsadosDados').onclick = () => alternarFiltroDados();
 
         document.querySelectorAll('.btn-exp-backup').forEach(b => b.onclick = exportarBackup);
         document.querySelectorAll('.btn-imp-backup').forEach(b => b.onclick = () => document.getElementById('fileImportGlobal').click());
@@ -847,10 +917,12 @@
 
         document.getElementById('view-cards').classList.remove('active');
         document.getElementById('view-emails').classList.remove('active');
+        document.getElementById('view-dados').classList.remove('active');
         document.getElementById(`view-${aba}`).classList.add('active');
 
         document.getElementById('nav-btn-cards').classList.remove('active');
         document.getElementById('nav-btn-emails').classList.remove('active');
+        document.getElementById('nav-btn-dados').classList.remove('active');
         document.getElementById(`nav-btn-${aba}`).classList.add('active');
 
         if (focarUltimo) {
@@ -859,7 +931,7 @@
     }
 
     function rolarParaUltimoCopiado(aba) {
-        const elementoVerde = document.querySelector(`#view-${aba} .btn-copiar.ultimo-copiado`);
+        const elementoVerde = document.querySelector(`#view-${aba} .btn-copiar.ultimo-copiado, #view-${aba} .btn-copiar-sec.ultimo-copiado`);
         if (elementoVerde) {
             elementoVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
@@ -887,7 +959,7 @@
         tr.addEventListener('mouseup', aoCancelarToque);
         tr.addEventListener('touchstart', aoIniciarToque, { passive: true });
         tr.addEventListener('touchend', aoCancelarToque);
-        tr.addEventListener('touchmove', aoCancelarToque, { passive: true }); // Cancela selecao se o usuario ROLAR a tela
+        tr.addEventListener('touchmove', aoCancelarToque, { passive: true });
         tr.addEventListener('touchcancel', aoCancelarToque);
 
         tr.addEventListener('click', (e) => {
@@ -953,17 +1025,23 @@
                 localStorage.setItem(CHAVES[tipo].ultimo, ultimoId);
             }
 
-            // Atualização CIRÚRGICA sem recriar DOM
-            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado`).forEach(b => b.classList.remove('ultimo-copiado'));
+            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(b => b.classList.remove('ultimo-copiado'));
 
             idsArray.forEach(id => {
                 const tr = document.getElementById(`tr_${id}`);
                 if (tr) {
-                    const btn = tr.querySelector('.btn-copiar');
-                    if (btn) {
-                        btn.innerText = 'Usado!';
-                        btn.classList.add('usado');
-                        if (id === appState[tipo].ultimo) btn.classList.add('ultimo-copiado');
+                    const btnBloco = tr.querySelector('.btn-copiar');
+                    const btnCpf = tr.querySelector('.btn-cpf');
+                    
+                    if (btnBloco) {
+                        btnBloco.innerText = 'Usado!';
+                        btnBloco.classList.add('usado');
+                        if (id === appState[tipo].ultimo) btnBloco.classList.add('ultimo-copiado');
+                    }
+                    if (btnCpf) {
+                        btnCpf.innerText = 'CPF!';
+                        btnCpf.classList.add('usado');
+                        if (id === appState[tipo].ultimo) btnCpf.classList.add('ultimo-copiado');
                     }
                 }
             });
@@ -997,9 +1075,56 @@
         });
     }
 
+    // --- PARSER DE DADOS/PESSOAS ---
+    function extrairBlocosPessoas(texto) {
+        const itens = [];
+        let contador = 1;
+
+        const blocosBrutos = texto.split(/(?:PESSOA\s+\d+:?|\n\s*\n)+/i);
+
+        blocosBrutos.forEach(bloco => {
+            const b = bloco.trim();
+            if (!b) return;
+
+            let cpf = '', nome = '', nascimento = '', sexo = '';
+
+            const mCpf = b.match(/(?:CPF|DOC|DOCUMENTO)[:\s]*([0-9\.\-]+)/i);
+            const mNome = b.match(/(?:NOME|NOME COMPLETO)[:\s]*([^\n•|]+)/i);
+            const mNasc = b.match(/(?:NASCIMENTO|NASC|DATA NASC)[:\s]*([0-9\/]+)/i);
+            const mSexo = b.match(/(?:SEXO|GENERO)[:\s]*([M|F|MASCULINO|FEMININO])/i);
+
+            if (mCpf) cpf = mCpf[1].replace(/[^\d]/g, '').trim();
+            if (mNome) nome = mNome[1].trim();
+            if (mNasc) nascimento = mNasc[1].trim();
+            if (mSexo) sexo = mSexo[1].trim().toUpperCase();
+
+            if (!cpf && !nome && b.includes('|')) {
+                const partes = b.split('|');
+                if (partes[0]) cpf = partes[0].replace(/[^\d]/g, '').trim();
+                if (partes[1]) nome = partes[1].trim();
+                if (partes[2]) nascimento = partes[2].trim();
+                if (partes[3]) sexo = partes[3].trim().toUpperCase();
+            }
+
+            if (cpf || nome) {
+                itens.push({
+                    idItem: contador++,
+                    principal: nome || 'NOME NÃO INFORMADO',
+                    secundario: cpf || 'S/ CPF',
+                    terciario: (nascimento ? nascimento : '-') + (sexo ? ` (${sexo})` : ''),
+                    textoCompleto: b,
+                    cpfLimpo: cpf
+                });
+            }
+        });
+
+        return itens;
+    }
+
     // --- OPERAÇÕES DE LOTE ---
     function adicionarLote(tipo) {
-        const campo = document.getElementById(tipo === 'cards' ? 'entradaDadosCards' : 'entradaDadosEmails');
+        const campoId = tipo === 'cards' ? 'entradaDadosCards' : (tipo === 'emails' ? 'entradaDadosEmails' : 'entradaDadosPessoas');
+        const campo = document.getElementById(campoId);
         let texto = campo.value.trim();
 
         if (!texto) {
@@ -1021,40 +1146,45 @@
             } catch (err) {}
         }
 
-        const linhas = texto.split(/\r?\n/);
-        const itens = [];
-        let contador = 1;
+        let itens = [];
 
-        linhas.forEach(linha => {
-            let l = linha.trim().replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
-            if (!l) return;
+        if (tipo === 'dados') {
+            itens = extrairBlocosPessoas(texto);
+        } else {
+            const linhas = texto.split(/\r?\n/);
+            let contador = 1;
 
-            if (tipo === 'cards') {
-                const partes = l.split(/[\s,|]+/);
-                const numero = partes[0] ? partes[0].trim() : '';
-                if (!numero) return;
-                
-                itens.push({
-                    idItem: contador++,
-                    principal: numero,
-                    secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
-                    terciario: partes[3] ? partes[3].trim() : '789',
-                    textoCompleto: l
-                });
-            } else {
-                let delimitador = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
-                const partes = l.split(delimitador);
-                const email = partes[0] ? partes[0].trim() : '';
-                if (!email) return;
-                itens.push({
-                    idItem: contador++,
-                    principal: email,
-                    secundario: partes[1] ? partes[1].trim() : '-',
-                    terciario: '',
-                    textoCompleto: l
-                });
-            }
-        });
+            linhas.forEach(linha => {
+                let l = linha.trim().replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
+                if (!l) return;
+
+                if (tipo === 'cards') {
+                    const partes = l.split(/[\s,|]+/);
+                    const numero = partes[0] ? partes[0].trim() : '';
+                    if (!numero) return;
+                    
+                    itens.push({
+                        idItem: contador++,
+                        principal: numero,
+                        secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
+                        terciario: partes[3] ? partes[3].trim() : '789',
+                        textoCompleto: l
+                    });
+                } else if (tipo === 'emails') {
+                    let delimitador = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
+                    const partes = l.split(delimitador);
+                    const email = partes[0] ? partes[0].trim() : '';
+                    if (!email) return;
+                    itens.push({
+                        idItem: contador++,
+                        principal: email,
+                        secundario: partes[1] ? partes[1].trim() : '-',
+                        terciario: '',
+                        textoCompleto: l
+                    });
+                }
+            });
+        }
 
         if (itens.length === 0) {
             alert('Nenhum dado válido foi identificado.');
@@ -1063,7 +1193,7 @@
 
         const novoLote = {
             idLote: Date.now(),
-            nome: `${tipo === 'cards' ? 'Cards' : 'Logins'} • ${gerarDataHoraFormatada()}`,
+            nome: `${tipo === 'cards' ? 'Cards' : (tipo === 'emails' ? 'Logins' : 'Pessoas')} • ${gerarDataHoraFormatada()}`,
             banner: BANNERS[appState[tipo].lotes.length % BANNERS.length],
             itens: itens
         };
@@ -1233,6 +1363,13 @@
         filtrarItens('cards');
     }
 
+    function alternarFiltroDados() {
+        appState.dados.ocultar = !appState.dados.ocultar;
+        localStorage.setItem(CHAVES.dados.ocultar, JSON.stringify(appState.dados.ocultar));
+        atualizarBotaoFiltroVisual('dados');
+        filtrarItens('dados');
+    }
+
     function alternarFiltroEmails(filtro) {
         if (filtro === 'usados') {
             appState.emails.ocultar = !appState.emails.ocultar;
@@ -1256,6 +1393,10 @@
             const btn = document.getElementById('btnOcultarUsadosCards');
             btn.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
             btn.classList.toggle('ativo', appState.cards.ocultar);
+        } else if (tipo === 'dados') {
+            const btn = document.getElementById('btnOcultarUsadosDados');
+            btn.innerText = appState.dados.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
+            btn.classList.toggle('ativo', appState.dados.ocultar);
         } else {
             const btnU = document.getElementById('btnOcultarUsadosEmails');
             const btnV = document.getElementById('btnOcultarVirgens');
@@ -1284,7 +1425,7 @@
     }
 
     function filtrarItens(tipo) {
-        const campoId = tipo === 'cards' ? 'campoPesquisaCards' : 'campoPesquisaEmails';
+        const campoId = tipo === 'cards' ? 'campoPesquisaCards' : (tipo === 'emails' ? 'campoPesquisaEmails' : 'campoPesquisaDados');
         const termo = document.getElementById(campoId).value.trim().toLowerCase();
 
         appState[tipo].lotes.forEach(lote => {
@@ -1300,7 +1441,8 @@
 
                 if (!trElemento) return;
 
-                const atendePesquisa = termo === '' || item.principal.toLowerCase().includes(termo);
+                const textoBusca = (item.principal + ' ' + (item.secundario || '') + ' ' + (item.cpfLimpo || '')).toLowerCase();
+                const atendePesquisa = termo === '' || textoBusca.includes(termo);
                 let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado;
                 let atendeFiltroVirgens = true, atendeFiltroSuspensas = true, atendeFiltroAssinadas = true;
 
@@ -1332,7 +1474,8 @@
 
     // --- RENDERIZAÇÃO PRINCIPAL ---
     function renderizarTodosLotes(tipo) {
-        const area = document.getElementById(tipo === 'cards' ? 'areaLotesCards' : 'areaLotesEmails');
+        const areaId = tipo === 'cards' ? 'areaLotesCards' : (tipo === 'emails' ? 'areaLotesEmails' : 'areaLotesDados');
+        const area = document.getElementById(areaId);
         area.innerHTML = '';
 
         appState[tipo].lotes.forEach(lote => {
@@ -1355,13 +1498,13 @@
                         <span>${lote.nome}</span>
                         <span class="qtd-badge">${lote.itens.length}</span>
                     </div>
-                    <div class="grupo-botoes-cabecalho" id="botoesCab_${lote.idLote}"></div>
+                    <div class="grupo-botoes-cabecalho" id="botoesCab_${tipo}_${lote.idLote}"></div>
                 </div>
             `;
             divLote.appendChild(bannerDiv);
 
-            // Inserir botões no cabeçalho com EventListeners Seguros
-            const btnGrupo = bannerDiv.querySelector(`#botoesCab_${lote.idLote}`);
+            // Inserir botões no cabeçalho
+            const btnGrupo = bannerDiv.querySelector(`#botoesCab_${tipo}_${lote.idLote}`);
             if (tipo === 'cards') {
                 const btnCopiarT = document.createElement('button');
                 btnCopiarT.className = 'btn-acao-lote btn-copiar-lote';
@@ -1375,7 +1518,7 @@
 
                 btnGrupo.appendChild(btnCopiarT);
                 btnGrupo.appendChild(btnApagarL);
-            } else {
+            } else if (tipo === 'emails') {
                 if (!lote.nome.startsWith('ASSINADAS USADAS')) {
                     const btnCopiarA = document.createElement('button');
                     btnCopiarA.className = 'btn-acao-lote btn-copiar-lote';
@@ -1383,6 +1526,12 @@
                     btnCopiarA.onclick = (e) => { e.stopPropagation(); copiarAssinadasDoLote(lote.idLote); };
                     btnGrupo.appendChild(btnCopiarA);
                 }
+                const btnApagarL = document.createElement('button');
+                btnApagarL.className = 'btn-acao-lote';
+                btnApagarL.innerText = 'Apagar';
+                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
+                btnGrupo.appendChild(btnApagarL);
+            } else {
                 const btnApagarL = document.createElement('button');
                 btnApagarL.className = 'btn-acao-lote';
                 btnApagarL.innerText = 'Apagar';
@@ -1398,9 +1547,10 @@
             tabelaContainer.className = 'tabela-container';
             
             const tabela = document.createElement('table');
-            const theadText = tipo === 'cards' 
-                ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`
-                : `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
+            let theadText = `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`;
+            if (tipo === 'emails') theadText = `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
+            if (tipo === 'dados') theadText = `<tr><th>Nº</th><th>Nome / Dados</th><th>CPF</th><th>Nasc / Sexo</th><th>Ações</th></tr>`;
+            
             tabela.innerHTML = `<thead>${theadText}</thead>`;
 
             const tbody = document.createElement('tbody');
@@ -1436,9 +1586,9 @@
                         <td><button class="btn-excluir-item">🗑️</button></td>
                     `;
 
-                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e);
+                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
                     tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
-                } else {
+                } else if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
                     const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
 
@@ -1461,7 +1611,31 @@
                     `;
 
                     tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(item.principal, e.target.value);
-                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e);
+                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
+                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
+                } else {
+                    // DADOS / PESSOAS
+                    let classeCpf = 'btn-copiar-sec btn-cpf';
+                    let textoCpf = 'CPF';
+                    if (jaFoiUsado) { classeCpf += ' usado'; textoCpf = 'CPF!'; }
+                    if (ehUltimo) { classeCpf += ' ultimo-copiado'; }
+
+                    tr.innerHTML = `
+                        <td><span class="badge-id">${item.idItem}</span></td>
+                        <td class="email-text"><strong>${item.principal}</strong></td>
+                        <td class="cartao-num">${item.secundario}</td>
+                        <td class="email-text">${item.terciario}</td>
+                        <td>
+                            ${item.cpfLimpo ? `<button class="${classeCpf}" data-id="${idUnico}">${textoCpf}</button>` : ''}
+                            <button class="${classeStatus}" data-id="${idUnico}">Bloco</button>
+                            <button class="btn-excluir-item">🗑️</button>
+                        </td>
+                    `;
+
+                    if (item.cpfLimpo) {
+                        tr.querySelector('.btn-cpf').onclick = (e) => copiarTexto(e.target, tipo, item.cpfLimpo, e, idUnico);
+                    }
+                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, item.textoCompleto, e, idUnico);
                     tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 }
 
@@ -1478,18 +1652,36 @@
         filtrarItens(tipo);
     }
 
-    function copiarTexto(botao, tipo, texto, e) {
+    function copiarTexto(botao, tipo, texto, e, idUnico) {
         if (e) e.stopPropagation();
         copiarParaAreaTransferencia(texto).then(() => {
-            const id = botao.getAttribute('data-id');
+            const id = idUnico || botao.getAttribute('data-id');
 
-            // Atualização CIRÚRGICA sem recriar DOM inteiro
-            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado`).forEach(btn => {
+            // Remove destaque verde anterior
+            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(btn => {
                 btn.classList.remove('ultimo-copiado');
             });
 
-            botao.innerText = 'Usado!';
-            botao.classList.add('usado', 'ultimo-copiado');
+            // Se for na seção de Dados, atualiza AMBOS os botões da linha (CPF e Bloco)
+            const tr = document.getElementById(`tr_${id}`);
+            if (tr && tipo === 'dados') {
+                const btnBloco = tr.querySelector('.btn-copiar');
+                const btnCpf = tr.querySelector('.btn-cpf');
+                
+                if (btnBloco) {
+                    btnBloco.innerText = 'Usado!';
+                    btnBloco.classList.add('usado');
+                    if (botao === btnBloco) btnBloco.classList.add('ultimo-copiado');
+                }
+                if (btnCpf) {
+                    btnCpf.innerText = 'CPF!';
+                    btnCpf.classList.add('usado');
+                    if (botao === btnCpf) btnCpf.classList.add('ultimo-copiado');
+                }
+            } else {
+                botao.innerText = 'Usado!';
+                botao.classList.add('usado', 'ultimo-copiado');
+            }
 
             if (id && !appState[tipo].usados.includes(id)) {
                 appState[tipo].usados.push(id);
@@ -1512,7 +1704,8 @@
         const backupData = {
             versao: '10.0',
             cards: appState.cards,
-            emails: appState.emails
+            emails: appState.emails,
+            dados: appState.dados
         };
 
         const dataStr = JSON.stringify(backupData);
@@ -1572,7 +1765,7 @@
                         renderizarTodosLotes('cards');
                         alert(`✅ Arquivo de texto importado com ${itensCards.length} cartões!`);
                     } else {
-                        alert('❌ O arquivo não contém cartões ou JSON válidos.');
+                        alert('❌ O arquivo não contém dados válidos.');
                     }
                     event.target.value = '';
                     return;
@@ -1580,7 +1773,9 @@
 
                 let dadosCards = data.cards || (data.lotes && Array.isArray(data.lotes) ? { lotes: data.lotes } : (Array.isArray(data) ? { lotes: data } : data));
                 let dadosEmails = data.emails || {};
+                let dadosPessoas = data.dados || {};
 
+                // Cards
                 const cLotes = dadosCards.lotes || [];
                 const cUsados = dadosCards.usados || [];
                 const cAbertos = dadosCards.abertos && Array.isArray(dadosCards.abertos) ? dadosCards.abertos : [];
@@ -1593,6 +1788,7 @@
                 localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(cOcultar));
                 if(cUltimo) localStorage.setItem(CHAVES.cards.ultimo, cUltimo);
 
+                // Emails
                 const eLotes = dadosEmails.lotes || [];
                 const eUsados = dadosEmails.usados || [];
                 const eAbertos = dadosEmails.abertos && Array.isArray(dadosEmails.abertos) ? dadosEmails.abertos : [];
@@ -1613,16 +1809,34 @@
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
+                // Dados
+                const dLotes = dadosPessoas.lotes || [];
+                const dUsados = dadosPessoas.usados || [];
+                const dAbertos = dadosPessoas.abertos && Array.isArray(dadosPessoas.abertos) ? dadosPessoas.abertos : [];
+                const dOcultar = dadosPessoas.ocultar !== undefined ? dadosPessoas.ocultar : false;
+                const dUltimo = dadosPessoas.ultimo || null;
+
+                localStorage.setItem(CHAVES.dados.lotes, JSON.stringify(dLotes));
+                localStorage.setItem(CHAVES.dados.usados, JSON.stringify(dUsados));
+                localStorage.setItem(CHAVES.dados.abertos, JSON.stringify(dAbertos));
+                localStorage.setItem(CHAVES.dados.ocultar, JSON.stringify(dOcultar));
+                if(dUltimo) localStorage.setItem(CHAVES.dados.ultimo, dUltimo);
+
                 appState.cards = { lotes: cLotes, usados: cUsados, abertos: cAbertos, ocultar: cOcultar, ultimo: cUltimo };
                 appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, status: eStatus, ultimo: eUltimo };
+                appState.dados = { lotes: dLotes, usados: dUsados, abertos: dAbertos, ocultar: dOcultar, ultimo: dUltimo };
 
                 reordenarEAtualizarLotes('cards');
                 reordenarEAtualizarLotes('emails');
+                reordenarEAtualizarLotes('dados');
 
                 atualizarBotaoFiltroVisual('cards');
                 atualizarBotaoFiltroVisual('emails');
+                atualizarBotaoFiltroVisual('dados');
+
                 renderizarTodosLotes('cards');
                 renderizarTodosLotes('emails');
+                renderizarTodosLotes('dados');
 
                 alert('✅ Backup importado e renderizado com sucesso!');
                 rolarParaUltimoCopiado(appState.abaAtiva);
