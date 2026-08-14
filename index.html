@@ -1269,7 +1269,7 @@
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 reordenarEAtualizarLotes(tipo);
 
-                const idUnico = `item_${tipo}_${idLote}_${idItem}`;
+                const idUnico = `item_${tipo}_${lote.idLote}_${idItem}`;
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
 
                 localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
@@ -1281,10 +1281,20 @@
         });
     }
 
-    // --- COPIAR ASSINADAS DO LOTE (LEITURA DIRETA DO DOM) ---
+    // --- COPIAR ASSINADAS COM FILTRO ANTI-DUPLICADOS GLOBAL ---
     function copiarAssinadasDoLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
+
+        // Mapeia emails de todas as assinadas já extraídas anteriormente em lotes "ASSINADAS"
+        const emailsJaAssinadosEExtraidos = new Set();
+        appState.emails.lotes.forEach(l => {
+            if (l.nome && l.nome.startsWith('ASSINADAS')) {
+                l.itens.forEach(i => {
+                    if (i.principal) emailsJaAssinadosEExtraidos.add(i.principal.toLowerCase().trim());
+                });
+            }
+        });
 
         const itensAssinadosParaCopiar = [];
 
@@ -1301,13 +1311,16 @@
                 statusAtual = appState.emails.status[emailChave] || item.status;
             }
 
-            if (statusAtual === 'assinada') {
+            const emailFormatado = item.principal.toLowerCase().trim();
+
+            // Só adiciona se for "assinada" E NÃO estiver na lista de extraídas anteriormente
+            if (statusAtual === 'assinada' && !emailsJaAssinadosEExtraidos.has(emailFormatado)) {
                 itensAssinadosParaCopiar.push(item);
             }
         });
 
         if (itensAssinadosParaCopiar.length === 0) {
-            alert('⚠️ Nenhuma conta com o status "Assinada" foi encontrada neste lote.');
+            alert('⚠️ Nenhuma conta "Assinada" NOVA encontrada neste lote (as existentes já foram copiadas anteriormente).');
             return;
         }
 
@@ -1344,7 +1357,7 @@
             reordenarEAtualizarLotes('emails');
             localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ Lote criado com ${itensAssinadosParaCopiar.length} conta(s)!`);
+            mostrarStatus(`✅ Lote criado com ${itensAssinadosParaCopiar.length} conta(s) inédita(s)!`);
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
