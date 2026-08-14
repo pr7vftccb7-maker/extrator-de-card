@@ -1281,25 +1281,33 @@
         });
     }
 
-    // --- COPIAR ASSINADAS DO LOTE (COMPATIBILIDADE DUPLA) ---
+    // --- COPIAR ASSINADAS DO LOTE (LEITURA DIRETA DO DOM) ---
     function copiarAssinadasDoLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
-        const itensAssinadosParaCopiar = lote.itens.filter(item => {
-            const emailChave = item.principal.toLowerCase();
+        const itensAssinadosParaCopiar = [];
+
+        lote.itens.forEach(item => {
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const statusGlobal = appState.emails.status[emailChave] || appState.emails.status[idUnico];
-            const statusItem = item.status;
+            const tr = document.getElementById(`tr_${idUnico}`);
+            
+            let statusAtual = item.status;
+            if (tr) {
+                const select = tr.querySelector('.status-select');
+                if (select) statusAtual = select.value;
+            } else {
+                const emailChave = item.principal.toLowerCase();
+                statusAtual = appState.emails.status[emailChave] || item.status;
+            }
 
-            const ehAssinada = (statusGlobal === 'assinada' || statusItem === 'assinada');
-            const jaFoiCopiadoAssinada = appState.emails.usados.includes(idUnico);
-
-            return ehAssinada && !jaFoiCopiadoAssinada;
+            if (statusAtual === 'assinada') {
+                itensAssinadosParaCopiar.push(item);
+            }
         });
 
         if (itensAssinadosParaCopiar.length === 0) {
-            alert('⚠️ Nenhuma conta "assinada" nova encontrada neste lote.');
+            alert('⚠️ Nenhuma conta com o status "Assinada" foi encontrada neste lote.');
             return;
         }
 
@@ -1401,15 +1409,12 @@
         }
     }
 
-    // --- ATUALIZAÇÃO DIRETA NO OBJETO DO ITEM ---
     function mudarStatusItemEmail(idLote, idItem, emailText, novoStatus) {
         const emailChave = emailText.toLowerCase();
         
-        // Atualiza estado global
         appState.emails.status[emailChave] = novoStatus;
         localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
 
-        // Atualiza diretamente no objeto dentro do lote
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (lote) {
             const item = lote.itens.find(i => i.idItem === idItem);
