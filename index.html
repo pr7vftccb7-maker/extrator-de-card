@@ -1171,7 +1171,8 @@
                         principal: email,
                         secundario: partes[1] ? partes[1].trim() : '-',
                         terciario: '',
-                        textoCompleto: l
+                        textoCompleto: l,
+                        status: 'virgem'
                     });
                 }
             });
@@ -1280,7 +1281,7 @@
         });
     }
 
-    // --- COPIAR ASSINADAS CRIA LOTE DEDICADO POR DIA/HORA ---
+    // --- COPIAR ASSINADAS DO LOTE (COMPATIBILIDADE DUPLA) ---
     function copiarAssinadasDoLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
@@ -1288,9 +1289,13 @@
         const itensAssinadosParaCopiar = lote.itens.filter(item => {
             const emailChave = item.principal.toLowerCase();
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || item.status || '';
+            const statusGlobal = appState.emails.status[emailChave] || appState.emails.status[idUnico];
+            const statusItem = item.status;
+
+            const ehAssinada = (statusGlobal === 'assinada' || statusItem === 'assinada');
             const jaFoiCopiadoAssinada = appState.emails.usados.includes(idUnico);
-            return statusAtual === 'assinada' && !jaFoiCopiadoAssinada;
+
+            return ehAssinada && !jaFoiCopiadoAssinada;
         });
 
         if (itensAssinadosParaCopiar.length === 0) {
@@ -1315,7 +1320,8 @@
                 principal: item.principal,
                 secundario: item.secundario,
                 terciario: '',
-                textoCompleto: item.textoCompleto
+                textoCompleto: item.textoCompleto,
+                status: 'assinada'
             }));
 
             const novoLoteAssinadas = {
@@ -1330,7 +1336,7 @@
             reordenarEAtualizarLotes('emails');
             localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ Lote criado: ASSINADAS • ${gerarDataHoraFormatada()}`);
+            mostrarStatus(`✅ Lote criado com ${itensAssinadosParaCopiar.length} conta(s)!`);
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
@@ -1395,10 +1401,24 @@
         }
     }
 
-    function mudarStatusItemEmail(emailText, novoStatus) {
+    // --- ATUALIZAÇÃO DIRETA NO OBJETO DO ITEM ---
+    function mudarStatusItemEmail(idLote, idItem, emailText, novoStatus) {
         const emailChave = emailText.toLowerCase();
+        
+        // Atualiza estado global
         appState.emails.status[emailChave] = novoStatus;
         localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
+
+        // Atualiza diretamente no objeto dentro do lote
+        const lote = appState.emails.lotes.find(l => l.idLote === idLote);
+        if (lote) {
+            const item = lote.itens.find(i => i.idItem === idItem);
+            if (item) {
+                item.status = novoStatus;
+                localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
+            }
+        }
+
         filtrarItens('emails');
     }
 
@@ -1426,7 +1446,7 @@
 
                 if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
-                    const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
+                    const statusAtual = appState.emails.status[emailChave] || item.status || '';
                     if (appState.emails.ocultarVirgens && statusAtual === 'virgem') atendeFiltroVirgens = false;
                     if (appState.emails.ocultarSuspensas && statusAtual === 'suspensa') atendeFiltroSuspensas = false;
                     if (appState.emails.ocultarAssinadas && statusAtual === 'assinada') atendeFiltroAssinadas = false;
@@ -1564,7 +1584,7 @@
                     tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 } else if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
-                    const statusAtual = appState.emails.status[emailChave] || appState.emails.status[idUnico] || '';
+                    const statusAtual = appState.emails.status[emailChave] || item.status || '';
 
                     tr.innerHTML = `
                         <td><span class="badge-id">${item.idItem}</span></td>
@@ -1584,7 +1604,7 @@
                         </td>
                     `;
 
-                    tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(item.principal, e.target.value);
+                    tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(lote.idLote, item.idItem, item.principal, e.target.value);
                     tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
                     tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
                 } else {
