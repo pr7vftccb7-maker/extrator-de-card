@@ -78,6 +78,34 @@
             color: #aaa;
             margin-bottom: 10px;
         }
+
+        .seletor-modo-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .radio-modo {
+            display: none;
+        }
+        .label-modo {
+            flex: 1;
+            padding: 10px 12px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #aaa;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .radio-modo:checked + .label-modo {
+            background: #E50914;
+            color: #fff;
+            border-color: #E50914;
+        }
+
         textarea {
             width: 100%;
             height: 110px;
@@ -320,6 +348,20 @@
 
         tr.linha-oculta {
             display: none !important;
+        }
+
+        .badge-live {
+            background-color: #2ea84a;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            box-shadow: 0 0 8px rgba(46, 168, 74, 0.4);
         }
 
         .btn-copiar {
@@ -621,12 +663,20 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v10</div>
+                <div class="versao-tag">v11.0</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
 
-        <p class="instrucoes">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
+        <div class="seletor-modo-container">
+            <input type="radio" id="modoImportarCards" name="modoCards" class="radio-modo" value="importar" checked>
+            <label for="modoImportarCards" class="label-modo">📥 Importar Cartões</label>
+
+            <input type="radio" id="modoMarcarLiveCards" name="modoCards" class="radio-modo" value="live">
+            <label for="modoMarcarLiveCards" class="label-modo">🟢 Marcar Cartões LIVE</label>
+        </div>
+
+        <p class="instrucoes" id="instrucoesCards">Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:</p>
         <textarea id="entradaDadosCards" placeholder="Cole seus cartões aqui..."></textarea>
         <button class="btn-processar" id="btnImportarCards">Importar Cartões</button>
 
@@ -649,7 +699,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v10</div>
+                <div class="versao-tag">v11.0</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -680,7 +730,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v10</div>
+                <div class="versao-tag">v11.0</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -874,7 +924,34 @@
         document.getElementById('nav-btn-emails').onclick = () => mudarAba('emails');
         document.getElementById('nav-btn-dados').onclick = () => mudarAba('dados');
 
-        document.getElementById('btnImportarCards').onclick = () => adicionarLote('cards');
+        document.getElementById('btnImportarCards').onclick = () => {
+            const modoLive = document.getElementById('modoMarcarLiveCards').checked;
+            if (modoLive) {
+                marcarCartoesLive();
+            } else {
+                adicionarLote('cards');
+            }
+        };
+
+        document.querySelectorAll('input[name="modoCards"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const isLive = e.target.value === 'live';
+                const btn = document.getElementById('btnImportarCards');
+                const inst = document.getElementById('instrucoesCards');
+                const areaText = document.getElementById('entradaDadosCards');
+
+                if (isLive) {
+                    btn.innerText = '🟢 Marcar Cartões Como LIVE';
+                    inst.innerHTML = 'Cole a lista de cartões LIVE (serão identificados pelos <strong>16 dígitos</strong>):';
+                    areaText.placeholder = 'Cole seus cartões LIVE aqui...';
+                } else {
+                    btn.innerText = 'Importar Cartões';
+                    inst.innerHTML = 'Cole a lista no formato <code>NÚMERO|MÊS|ANO|CVV</code>:';
+                    areaText.placeholder = 'Cole seus cartões aqui...';
+                }
+            });
+        });
+
         document.getElementById('btnImportarEmails').onclick = () => adicionarLote('emails');
         document.getElementById('btnImportarDados').onclick = () => adicionarLote('dados');
 
@@ -1151,7 +1228,7 @@
 
                 if (tipo === 'cards') {
                     const partes = l.split(/[\s,|]+/);
-                    const numero = partes[0] ? partes[0].trim() : '';
+                    const numero = partes[0] ? partes[0].trim().replace(/\D/g, '') : '';
                     if (!numero) return;
                     
                     itens.push({
@@ -1159,7 +1236,8 @@
                         principal: numero,
                         secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
                         terciario: partes[3] ? partes[3].trim() : '789',
-                        textoCompleto: l
+                        textoCompleto: l,
+                        isLive: false
                     });
                 } else if (tipo === 'emails') {
                     let delimitador = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
@@ -1207,6 +1285,60 @@
         campo.value = '';
         renderizarTodosLotes(tipo);
         mostrarStatus(`Importado com sucesso!`);
+    }
+
+    // --- MARCAR CARTÕES LIVE POR 16 DÍGITOS ---
+    function marcarCartoesLive() {
+        const campo = document.getElementById('entradaDadosCards');
+        const texto = campo.value.trim();
+
+        if (!texto) {
+            alert('Cole a lista de cartões LIVE para marcar.');
+            return;
+        }
+
+        const cartoesLiveEncontrados = new Set();
+        const numerosExtraidos = texto.match(/\b\d{16}\b/g) || [];
+
+        if (numerosExtraidos.length === 0) {
+            const linhas = texto.split(/\r?\n/);
+            linhas.forEach(l => {
+                const apenasDigitos = l.replace(/\D/g, '');
+                if (apenasDigitos.length >= 16) {
+                    cartoesLiveEncontrados.add(apenasDigitos.substring(0, 16));
+                }
+            });
+        } else {
+            numerosExtraidos.forEach(num => cartoesLiveEncontrados.add(num));
+        }
+
+        if (cartoesLiveEncontrados.size === 0) {
+            alert('⚠️ Nenhum número de cartão com 16 dígitos foi encontrado no texto.');
+            return;
+        }
+
+        let marcadosComSucesso = 0;
+
+        appState.cards.lotes.forEach(lote => {
+            lote.itens.forEach(item => {
+                const numCardLimpo = item.principal ? item.principal.replace(/\D/g, '') : '';
+                if (numCardLimpo && cartoesLiveEncontrados.has(numCardLimpo)) {
+                    if (!item.isLive) {
+                        item.isLive = true;
+                        marcadosComSucesso++;
+                    }
+                }
+            });
+        });
+
+        if (marcadosComSucesso > 0) {
+            localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(appState.cards.lotes));
+            renderizarTodosLotes('cards');
+            campo.value = '';
+            alert(`🟢 Sucesso! ${marcadosComSucesso} cartão(ões) foram marcados como LIVE!`);
+        } else {
+            alert('⚠️ Nenhum dos cartões colados foi encontrado nas listas importadas anteriores.');
+        }
     }
 
     function alternarLote(tipo, idLote) {
@@ -1262,6 +1394,38 @@
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
+    function copiarTodosEmailsLote(idLote) {
+        const lote = appState.emails.lotes.find(l => l.idLote === idLote);
+        if (!lote || !lote.itens || lote.itens.length === 0) return;
+
+        let textoCompleto = '';
+        let quantidadeCopiada = 0;
+
+        lote.itens.forEach(item => {
+            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
+            const trElemento = document.getElementById(`tr_${idUnico}`);
+
+            if (trElemento && !trElemento.classList.contains('linha-oculta')) {
+                textoCompleto += (item.textoCompleto || item.principal) + '\n';
+                quantidadeCopiada++;
+                if (!appState.emails.usados.includes(idUnico)) {
+                    appState.emails.usados.push(idUnico);
+                }
+            }
+        });
+
+        if (quantidadeCopiada === 0) {
+            alert('⚠️ Nenhum item visível para copiar.');
+            return;
+        }
+
+        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
+            localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
+            renderizarTodosLotes('emails');
+            mostrarStatus(`✅ ${quantidadeCopiada} conta(s) copiada(s)!`);
+        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+    }
+
     function excluirItem(tipo, idLote, idItem) {
         mostrarModal('Apagar Item', 'Deseja remover este item?', () => {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
@@ -1269,7 +1433,7 @@
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 reordenarEAtualizarLotes(tipo);
 
-                const idUnico = `item_${tipo}_${lote.idLote}_${idItem}`;
+                const idUnico = `item_${tipo}_${idLote}_${idItem}`;
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
 
                 localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
@@ -1281,12 +1445,10 @@
         });
     }
 
-    // --- COPIAR ASSINADAS COM FILTRO ANTI-DUPLICADOS GLOBAL ---
     function copiarAssinadasDoLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
-        // Mapeia emails de todas as assinadas já extraídas anteriormente em lotes "ASSINADAS"
         const emailsJaAssinadosEExtraidos = new Set();
         appState.emails.lotes.forEach(l => {
             if (l.nome && l.nome.startsWith('ASSINADAS')) {
@@ -1313,7 +1475,6 @@
 
             const emailFormatado = item.principal.toLowerCase().trim();
 
-            // Só adiciona se for "assinada" E NÃO estiver na lista de extraídas anteriormente
             if (statusAtual === 'assinada' && !emailsJaAssinadosEExtraidos.has(emailFormatado)) {
                 itensAssinadosParaCopiar.push(item);
             }
@@ -1538,6 +1699,12 @@
                     btnCopiarA.innerText = 'Copiar Assinadas';
                     btnCopiarA.onclick = (e) => { e.stopPropagation(); copiarAssinadasDoLote(lote.idLote); };
                     btnGrupo.appendChild(btnCopiarA);
+                } else {
+                    const btnCopiarTodasAssinadas = document.createElement('button');
+                    btnCopiarTodasAssinadas.className = 'btn-acao-lote btn-copiar-lote';
+                    btnCopiarTodasAssinadas.innerText = 'Copiar Todas';
+                    btnCopiarTodasAssinadas.onclick = (e) => { e.stopPropagation(); copiarTodosEmailsLote(lote.idLote); };
+                    btnGrupo.appendChild(btnCopiarTodasAssinadas);
                 }
                 const btnApagarL = document.createElement('button');
                 btnApagarL.className = 'btn-acao-lote';
@@ -1587,10 +1754,13 @@
                 vincularEventosLinha(tr, idUnico, textToCopy, lote.idLote, item.idItem);
 
                 if (tipo === 'cards') {
+                    const badgeLiveHtml = item.isLive ? `<span class="badge-live">🟢 LIVE</span>` : '';
+
                     tr.innerHTML = `
                         <td><span class="badge-id">${item.idItem}</span></td>
                         <td>
                             <span class="cartao-num">${item.principal}</span>
+                            ${badgeLiveHtml}
                             <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
                         </td>
                         <td>${item.secundario}</td>
@@ -1710,7 +1880,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '10.0',
+            versao: '11.0',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
@@ -1749,14 +1919,15 @@
                         let linhaLote = l.trim();
                         if (!linhaLote) return;
                         const partes = linhaLote.split(/[\s,|]+/);
-                        const numero = partes[0] ? partes[0].trim() : '';
+                        const numero = partes[0] ? partes[0].trim().replace(/\D/g, '') : '';
                         if (numero) {
                             itensCards.push({
                                 idItem: contador++,
                                 principal: numero,
                                 secundario: (partes[1] && partes[2]) ? `${partes[1]}/${partes[2]}` : (partes[1] || '03/2030'),
                                 terciario: partes[3] ? partes[3].trim() : '789',
-                                textoCompleto: linhaLote
+                                textoCompleto: linhaLote,
+                                isLive: false
                             });
                         }
                     });
