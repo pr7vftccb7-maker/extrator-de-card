@@ -663,7 +663,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.2</div>
+                <div class="versao-tag">v11.3</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -699,7 +699,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.2</div>
+                <div class="versao-tag">v11.3</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -733,7 +733,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.2</div>
+                <div class="versao-tag">v11.3</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1130,6 +1130,7 @@
 
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
             atualizarPainelSelecao();
+            if (appState[tipo].ocultar) filtrarItens(tipo);
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
@@ -1636,6 +1637,7 @@
     function filtrarItens(tipo) {
         const campoId = tipo === 'cards' ? 'campoPesquisaCards' : (tipo === 'emails' ? 'campoPesquisaEmails' : 'campoPesquisaDados');
         const termo = document.getElementById(campoId).value.trim().toLowerCase();
+        const ultimoId = appState[tipo].ultimo;
 
         appState[tipo].lotes.forEach(lote => {
             const cardElemento = document.getElementById(`lote_${tipo}_${lote.idLote}`);
@@ -1646,13 +1648,17 @@
             lote.itens.forEach(item => {
                 const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
                 const jaFoiUsado = appState[tipo].usados.includes(idUnico);
+                const ehOUltimoCopiado = (idUnico === ultimoId);
                 const trElemento = document.getElementById(`tr_${idUnico}`);
 
                 if (!trElemento) return;
 
                 const textoBusca = (item.principal + ' ' + (item.secundario || '') + ' ' + (item.cpfLimpo || '')).toLowerCase();
                 const atendePesquisa = termo === '' || textoBusca.includes(termo);
-                let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado;
+                
+                // AJUSTE: Não oculta se for o ÚLTIMO COPIADO mesmo estando em modo "Ocultar Usados"
+                let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
+                
                 let atendeFiltroVirgens = true, atendeFiltroSuspensas = true, atendeFiltroAssinadas = true, atendeFiltroAnuncios = true, atendeFiltroPadrao = true, atendeFiltroPremium = true;
 
                 if (tipo === 'emails') {
@@ -1918,7 +1924,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '11.2',
+            versao: '11.3',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
