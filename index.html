@@ -696,7 +696,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.4</div>
+                <div class="versao-tag">v11.5</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -732,7 +732,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.4</div>
+                <div class="versao-tag">v11.5</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -746,6 +746,7 @@
                 <option value="anuncios">Anúncios</option>
                 <option value="padrao">Padrão</option>
                 <option value="premium">Premium</option>
+                <option value="queimada">Queimada</option>
             </select>
         </div>
 
@@ -763,6 +764,7 @@
                 <button id="btnOcultarAnuncios" class="btn-filtro-usados">Ocultar Anúncios</button>
                 <button id="btnOcultarPadrao" class="btn-filtro-usados">Ocultar Padrão</button>
                 <button id="btnOcultarPremium" class="btn-filtro-usados">Ocultar Premium</button>
+                <button id="btnOcultarQueimadas" class="btn-filtro-usados">Ocultar Queimadas</button>
                 <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
                 <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
@@ -778,7 +780,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.4</div>
+                <div class="versao-tag">v11.5</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -835,6 +837,7 @@
             ocultarAnuncios: 'filtro_ocultar_anuncios_geral',
             ocultarPadrao: 'filtro_ocultar_padrao_geral',
             ocultarPremium: 'filtro_ocultar_premium_geral',
+            ocultarQueimadas: 'filtro_ocultar_queimadas_geral',
             status: 'status_emails_geral',
             ultimo: 'ultimo_copiado_emails_geral'
         },
@@ -875,6 +878,7 @@
             ocultarAnuncios: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarAnuncios) || 'false'),
             ocultarPadrao: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarPadrao) || 'false'),
             ocultarPremium: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarPremium) || 'false'),
+            ocultarQueimadas: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarQueimadas) || 'false'),
             status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
             ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null
         },
@@ -1021,6 +1025,7 @@
         document.getElementById('btnOcultarAnuncios').onclick = () => alternarFiltroEmails('anuncios');
         document.getElementById('btnOcultarPadrao').onclick = () => alternarFiltroEmails('padrao');
         document.getElementById('btnOcultarPremium').onclick = () => alternarFiltroEmails('premium');
+        document.getElementById('btnOcultarQueimadas').onclick = () => alternarFiltroEmails('queimadas');
         document.getElementById('btnOcultarUsadosDados').onclick = () => alternarFiltroDados();
 
         document.querySelectorAll('.btn-exp-backup').forEach(b => b.onclick = exportarBackup);
@@ -1619,6 +1624,9 @@
         } else if (filtro === 'premium') {
             appState.emails.ocultarPremium = !appState.emails.ocultarPremium;
             localStorage.setItem(CHAVES.emails.ocultarPremium, JSON.stringify(appState.emails.ocultarPremium));
+        } else if (filtro === 'queimadas') {
+            appState.emails.ocultarQueimadas = !appState.emails.ocultarQueimadas;
+            localStorage.setItem(CHAVES.emails.ocultarQueimadas, JSON.stringify(appState.emails.ocultarQueimadas));
         }
         atualizarBotaoFiltroVisual('emails');
         filtrarItens('emails');
@@ -1641,6 +1649,7 @@
             const btnAn = document.getElementById('btnOcultarAnuncios');
             const btnP = document.getElementById('btnOcultarPadrao');
             const btnPr = document.getElementById('btnOcultarPremium');
+            const btnQ = document.getElementById('btnOcultarQueimadas');
 
             btnU.innerText = appState.emails.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
             btnU.classList.toggle('ativo', appState.emails.ocultar);
@@ -1662,6 +1671,9 @@
 
             btnPr.innerText = appState.emails.ocultarPremium ? 'Mostrar Premium' : 'Ocultar Premium';
             btnPr.classList.toggle('ativo', appState.emails.ocultarPremium);
+
+            btnQ.innerText = appState.emails.ocultarQueimadas ? 'Mostrar Queimadas' : 'Ocultar Queimadas';
+            btnQ.classList.toggle('ativo', appState.emails.ocultarQueimadas);
         }
     }
 
@@ -1707,7 +1719,7 @@
                 
                 let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
                 
-                let atendeFiltroVirgens = true, atendeFiltroSuspensas = true, atendeFiltroAssinadas = true, atendeFiltroAnuncios = true, atendeFiltroPadrao = true, atendeFiltroPremium = true;
+                let atendeFiltroVirgens = true, atendeFiltroSuspensas = true, atendeFiltroAssinadas = true, atendeFiltroAnuncios = true, atendeFiltroPadrao = true, atendeFiltroPremium = true, atendeFiltroQueimadas = true;
 
                 if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
@@ -1718,9 +1730,10 @@
                     if (appState.emails.ocultarAnuncios && statusAtual === 'anuncios') atendeFiltroAnuncios = false;
                     if (appState.emails.ocultarPadrao && statusAtual === 'padrao') atendeFiltroPadrao = false;
                     if (appState.emails.ocultarPremium && statusAtual === 'premium') atendeFiltroPremium = false;
+                    if (appState.emails.ocultarQueimadas && statusAtual === 'queimada') atendeFiltroQueimadas = false;
                 }
 
-                if (atendePesquisa && atendeFiltroUsado && atendeFiltroVirgens && atendeFiltroSuspensas && atendeFiltroAssinadas && atendeFiltroAnuncios && atendeFiltroPadrao && atendeFiltroPremium) {
+                if (atendePesquisa && atendeFiltroUsado && atendeFiltroVirgens && atendeFiltroSuspensas && atendeFiltroAssinadas && atendeFiltroAnuncios && atendeFiltroPadrao && atendeFiltroPremium && atendeFiltroQueimadas) {
                     trElemento.classList.remove('linha-oculta');
                     linhasVisiveisNoLote++;
                 } else {
@@ -1730,7 +1743,7 @@
 
             if (termo !== '' && linhasVisiveisNoLote > 0) cardElemento.classList.add('aberto');
 
-            if (linhasVisiveisNoLote === 0 && (termo !== '' || appState[tipo].ocultar || (tipo==='emails' && (appState.emails.ocultarVirgens || appState.emails.ocultarSuspensas || appState.emails.ocultarAssinadas || appState.emails.ocultarAnuncios || appState.emails.ocultarPadrao || appState.emails.ocultarPremium)))) {
+            if (linhasVisiveisNoLote === 0 && (termo !== '' || appState[tipo].ocultar || (tipo==='emails' && (appState.emails.ocultarVirgens || appState.emails.ocultarSuspensas || appState.emails.ocultarAssinadas || appState.emails.ocultarAnuncios || appState.emails.ocultarPadrao || appState.emails.ocultarPremium || appState.emails.ocultarQueimadas)))) {
                 cardElemento.style.display = 'none';
             } else {
                 cardElemento.style.display = 'block';
@@ -1876,6 +1889,7 @@
                                 <option value="anuncios" ${statusAtual === 'anuncios' ? 'selected' : ''}>Anúncios</option>
                                 <option value="padrao" ${statusAtual === 'padrao' ? 'selected' : ''}>Padrão</option>
                                 <option value="premium" ${statusAtual === 'premium' ? 'selected' : ''}>Premium</option>
+                                <option value="queimada" ${statusAtual === 'queimada' ? 'selected' : ''}>Queimada</option>
                             </select>
                         </td>
                         <td>
@@ -1972,7 +1986,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '11.4',
+            versao: '11.5',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
@@ -2070,6 +2084,7 @@
                 const eOcultarAnuncios = dadosEmails.ocultarAnuncios !== undefined ? dadosEmails.ocultarAnuncios : false;
                 const eOcultarPadrao = dadosEmails.ocultarPadrao !== undefined ? dadosEmails.ocultarPadrao : false;
                 const eOcultarPremium = dadosEmails.ocultarPremium !== undefined ? dadosEmails.ocultarPremium : false;
+                const eOcultarQueimadas = dadosEmails.ocultarQueimadas !== undefined ? dadosEmails.ocultarQueimadas : false;
                 const eStatus = dadosEmails.status || {};
                 const eUltimo = dadosEmails.ultimo || null;
 
@@ -2083,6 +2098,7 @@
                 localStorage.setItem(CHAVES.emails.ocultarAnuncios, JSON.stringify(eOcultarAnuncios));
                 localStorage.setItem(CHAVES.emails.ocultarPadrao, JSON.stringify(eOcultarPadrao));
                 localStorage.setItem(CHAVES.emails.ocultarPremium, JSON.stringify(eOcultarPremium));
+                localStorage.setItem(CHAVES.emails.ocultarQueimadas, JSON.stringify(eOcultarQueimadas));
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
@@ -2100,7 +2116,7 @@
                 if(dUltimo) localStorage.setItem(CHAVES.dados.ultimo, dUltimo);
 
                 appState.cards = { lotes: cLotes, usados: cUsados, abertos: cAbertos, ocultar: cOcultar, ultimo: cUltimo };
-                appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, ocultarAnuncios: eOcultarAnuncios, ocultarPadrao: eOcultarPadrao, ocultarPremium: eOcultarPremium, status: eStatus, ultimo: eUltimo };
+                appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, ocultarAnuncios: eOcultarAnuncios, ocultarPadrao: eOcultarPadrao, ocultarPremium: eOcultarPremium, ocultarQueimadas: eOcultarQueimadas, status: eStatus, ultimo: eUltimo };
                 appState.dados = { lotes: dLotes, usados: dUsados, abertos: dAbertos, ocultar: dOcultar, ultimo: dUltimo };
 
                 reordenarEAtualizarLotes('cards');
