@@ -696,7 +696,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.5</div>
+                <div class="versao-tag">v11.6</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -732,7 +732,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.5</div>
+                <div class="versao-tag">v11.6</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -766,7 +766,7 @@
                 <button id="btnOcultarPremium" class="btn-filtro-usados">Ocultar Premium</button>
                 <button id="btnOcultarQueimadas" class="btn-filtro-usados">Ocultar Queimadas</button>
                 <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
-                <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
+                <button class="btn-backup btn-imp-backup">⬆️️ Restaurar</button>
             </div>
         </div>
 
@@ -780,7 +780,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.5</div>
+                <div class="versao-tag">v11.6</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1515,55 +1515,37 @@
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
-        const emailsJaAssinadosEExtraidos = new Set();
-        appState.emails.lotes.forEach(l => {
-            if (l.nome && l.nome.startsWith('ASSINADAS')) {
-                l.itens.forEach(i => {
-                    if (i.principal) emailsJaAssinadosEExtraidos.add(i.principal.toLowerCase().trim());
-                });
-            }
-        });
-
-        const itensAssinadosParaCopiar = [];
+        const statusPermitidos = ['padrao', 'premium', 'assinada'];
+        const itensParaMover = [];
+        const itensManter = [];
 
         lote.itens.forEach(item => {
-            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const tr = document.getElementById(`tr_${idUnico}`);
-            
-            let statusAtual = item.status;
-            if (tr) {
-                const select = tr.querySelector('.status-select');
-                if (select) statusAtual = select.value;
+            const emailChave = item.principal.toLowerCase();
+            const statusAtual = appState.emails.status[emailChave] || item.status || '';
+
+            if (statusPermitidos.includes(statusAtual)) {
+                itensParaMover.push(item);
             } else {
-                const emailChave = item.principal.toLowerCase();
-                statusAtual = appState.emails.status[emailChave] || item.status;
-            }
-
-            const emailFormatado = item.principal.toLowerCase().trim();
-
-            if (statusAtual === 'assinada' && !emailsJaAssinadosEExtraidos.has(emailFormatado)) {
-                itensAssinadosParaCopiar.push(item);
+                itensManter.push(item);
             }
         });
 
-        if (itensAssinadosParaCopiar.length === 0) {
-            alert('⚠️ Nenhuma conta "Assinada" NOVA encontrada neste lote (as existentes já foram copiadas anteriormente).');
+        if (itensParaMover.length === 0) {
+            alert('⚠️ Nenhuma conta com status "Padrão", "Premium" ou "Assinada" foi encontrada neste lote.');
             return;
         }
 
         let textoParaClipboard = '';
-        itensAssinadosParaCopiar.forEach(item => {
+        itensParaMover.forEach(item => {
             textoParaClipboard += item.textoCompleto + '\n';
-            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            if (!appState.emails.usados.includes(idUnico)) {
-                appState.emails.usados.push(idUnico);
-            }
         });
 
         copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
-            localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
+            // Atualiza o lote original removendo os itens movidos
+            lote.itens = itensManter;
 
-            const itensNovosLote = itensAssinadosParaCopiar.map((item, idx) => ({
+            // Prepara os itens para o novo lote
+            const itensNovosLote = itensParaMover.map((item, idx) => ({
                 idItem: idx + 1,
                 principal: item.principal,
                 secundario: item.secundario,
@@ -1571,6 +1553,12 @@
                 textoCompleto: item.textoCompleto,
                 status: 'assinada'
             }));
+
+            // Atualiza o mapa global de status para as contas movidas
+            itensParaMover.forEach(item => {
+                const emailChave = item.principal.toLowerCase();
+                appState.emails.status[emailChave] = 'assinada';
+            });
 
             const novoLoteAssinadas = {
                 idLote: Date.now(),
@@ -1583,8 +1571,10 @@
 
             reordenarEAtualizarLotes('emails');
             localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
+            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
+
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ Lote criado com ${itensAssinadosParaCopiar.length} conta(s) inédita(s)!`);
+            mostrarStatus(`✅ ${itensParaMover.length} conta(s) movida(s) para ASSINADAS!`);
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
@@ -1798,7 +1788,7 @@
                 if (!lote.nome.startsWith('ASSINADAS')) {
                     const btnCopiarA = document.createElement('button');
                     btnCopiarA.className = 'btn-acao-lote btn-copiar-lote';
-                    btnCopiarA.innerText = 'Copiar Assinadas';
+                    btnCopiarA.innerText = 'Mover Assinadas';
                     btnCopiarA.onclick = (e) => { e.stopPropagation(); copiarAssinadasDoLote(lote.idLote); };
                     btnGrupo.appendChild(btnCopiarA);
                 } else {
@@ -1986,7 +1976,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '11.5',
+            versao: '11.6',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
