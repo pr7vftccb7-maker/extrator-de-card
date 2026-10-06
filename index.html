@@ -223,6 +223,61 @@
             background-color: #444;
         }
 
+        /* CARD PASTA ASSINADAS */
+        .card-pasta-assinadas {
+            margin-top: 20px;
+            background: #1a1a1a;
+            border: 2px solid #34c759;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(52, 199, 89, 0.15);
+        }
+        .cabecalho-pasta-assinadas {
+            padding: 14px 16px;
+            background: rgba(52, 199, 89, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .titulo-pasta-assinadas {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 800;
+            color: #34c759;
+        }
+        .conteudo-pasta-assinadas {
+            padding: 12px;
+            background: #121212;
+            display: none;
+            border-top: 1px solid #282828;
+        }
+        .card-pasta-assinadas.aberto .conteudo-pasta-assinadas {
+            display: block;
+        }
+        .btn-senha-padrao {
+            background-color: #2b2b2b;
+            color: #34c759;
+            border: 1px solid #34c759;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-senha-padrao:hover {
+            background-color: #34c759;
+            color: #000;
+        }
+
+        .card-lote-selecionado {
+            border: 2px solid #34c759 !important;
+            box-shadow: 0 0 12px rgba(52, 199, 89, 0.4) !important;
+        }
+
         @media (min-width: 600px) {
             .input-pesquisa {
                 flex: 2;
@@ -696,7 +751,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.6</div>
+                <div class="versao-tag">v12.0</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -717,7 +772,7 @@
             <input type="text" id="campoPesquisaCards" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)...">
             <div class="grupo-botoes-filtros">
                 <button id="btnOcultarUsadosCards" class="btn-filtro-usados">Ocultar Usados</button>
-                <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
+                <button class="btn-backup btn-exp-backup">⬇️️ Backup</button>
                 <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
         </div>
@@ -732,7 +787,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.6</div>
+                <div class="versao-tag">v12.0</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -766,8 +821,20 @@
                 <button id="btnOcultarPremium" class="btn-filtro-usados">Ocultar Premium</button>
                 <button id="btnOcultarQueimadas" class="btn-filtro-usados">Ocultar Queimadas</button>
                 <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
-                <button class="btn-backup btn-imp-backup">⬆️️ Restaurar</button>
+                <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
+        </div>
+
+        <!-- AREA PASTA ASSINADAS -->
+        <div id="cardPastaAssinadas" class="card-pasta-assinadas">
+            <div class="cabecalho-pasta-assinadas" id="cabecalhoPastaAssinadas">
+                <div class="titulo-pasta-assinadas">
+                    <span>📁 ASSINADAS</span>
+                    <span class="qtd-badge" id="qtdLotesAssinadas">0</span>
+                </div>
+                <button class="btn-senha-padrao" id="btnConfigSenhaPadrao">🔑 Senha Padrão</button>
+            </div>
+            <div class="conteudo-pasta-assinadas" id="areaLotesAssinadas"></div>
         </div>
 
         <div id="areaLotesEmails"></div>
@@ -780,7 +847,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v11.6</div>
+                <div class="versao-tag">v12.0</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -839,7 +906,9 @@
             ocultarPremium: 'filtro_ocultar_premium_geral',
             ocultarQueimadas: 'filtro_ocultar_queimadas_geral',
             status: 'status_emails_geral',
-            ultimo: 'ultimo_copiado_emails_geral'
+            ultimo: 'ultimo_copiado_emails_geral',
+            senhaPadrao: 'senha_padrao_assinadas_geral',
+            pastaAberta: 'pasta_assinadas_aberta'
         },
         dados: {
             lotes: 'lotes_dados_geral',
@@ -880,7 +949,9 @@
             ocultarPremium: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarPremium) || 'false'),
             ocultarQueimadas: JSON.parse(localStorage.getItem(CHAVES.emails.ocultarQueimadas) || 'false'),
             status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
-            ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null
+            ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null,
+            senhaPadrao: localStorage.getItem(CHAVES.emails.senhaPadrao) || '',
+            pastaAberta: JSON.parse(localStorage.getItem(CHAVES.emails.pastaAberta) || 'false')
         },
         dados: {
             lotes: JSON.parse(localStorage.getItem(CHAVES.dados.lotes) || '[]'),
@@ -893,7 +964,9 @@
     };
 
     let modoSelecaoAtivo = false;
+    let modoSelecaoLotesAssinadas = false;
     let itensSelecionados = new Map(); 
+    let lotesAssinadasSelecionados = new Set();
     let timerPressionar = null;
     let acaoModalPendente = null;
 
@@ -974,6 +1047,10 @@
         renderizarTodosLotes('emails');
         renderizarTodosLotes('dados');
 
+        if (appState.emails.pastaAberta) {
+            document.getElementById('cardPastaAssinadas').classList.add('aberto');
+        }
+
         setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
     });
 
@@ -981,6 +1058,24 @@
         document.getElementById('nav-btn-cards').onclick = () => mudarAba('cards');
         document.getElementById('nav-btn-emails').onclick = () => mudarAba('emails');
         document.getElementById('nav-btn-dados').onclick = () => mudarAba('dados');
+
+        document.getElementById('cabecalhoPastaAssinadas').onclick = (e) => {
+            if (e.target.id === 'btnConfigSenhaPadrao') return;
+            const pasta = document.getElementById('cardPastaAssinadas');
+            pasta.classList.toggle('aberto');
+            appState.emails.pastaAberta = pasta.classList.contains('aberto');
+            localStorage.setItem(CHAVES.emails.pastaAberta, JSON.stringify(appState.emails.pastaAberta));
+        };
+
+        document.getElementById('btnConfigSenhaPadrao').onclick = () => {
+            const senhaAtual = appState.emails.senhaPadrao || '';
+            const novaSenha = prompt("Digite a senha padrão desejada para as contas ASSINADAS (Deixe em branco para usar a senha original):", senhaAtual);
+            if (novaSenha !== null) {
+                appState.emails.senhaPadrao = novaSenha.trim();
+                localStorage.setItem(CHAVES.emails.senhaPadrao, appState.emails.senhaPadrao);
+                mostrarStatus('🔑 Senha padrão atualizada!');
+            }
+        };
 
         document.getElementById('btnImportarCards').onclick = () => {
             const modoLive = document.getElementById('modoMarcarLiveCards').checked;
@@ -1032,8 +1127,14 @@
         document.querySelectorAll('.btn-imp-backup').forEach(b => b.onclick = () => document.getElementById('fileImportGlobal').click());
         document.getElementById('fileImportGlobal').onchange = importarBackup;
 
-        document.getElementById('btnCopiarSel').onclick = copiarItensSelecionados;
-        document.getElementById('btnApagarSel').onclick = apagarItensSelecionados;
+        document.getElementById('btnCopiarSel').onclick = () => {
+            if (modoSelecaoLotesAssinadas) copiarLotesAssinadasSelecionados();
+            else copiarItensSelecionados();
+        };
+        document.getElementById('btnApagarSel').onclick = () => {
+            if (modoSelecaoLotesAssinadas) apagarLotesAssinadasSelecionados();
+            else apagarItensSelecionados();
+        };
         document.getElementById('btnCancelarSel').onclick = limparSelecao;
 
         document.getElementById('btnModalCancelar').onclick = fecharModal;
@@ -1102,6 +1203,54 @@
         });
     }
 
+    function vincularEventosCardLoteAssinadas(divLote, idLote) {
+        const aoIniciarToque = () => {
+            timerPressionar = setTimeout(() => {
+                modoSelecaoLotesAssinadas = true;
+                alternarSelecaoLoteAssinadas(divLote, idLote);
+            }, 450);
+        };
+
+        const aoCancelarToque = () => {
+            if (timerPressionar) {
+                clearTimeout(timerPressionar);
+                timerPressionar = null;
+            }
+        };
+
+        divLote.addEventListener('mousedown', aoIniciarToque);
+        divLote.addEventListener('mouseup', aoCancelarToque);
+        divLote.addEventListener('touchstart', aoIniciarToque, { passive: true });
+        divLote.addEventListener('touchend', aoCancelarToque);
+        divLote.addEventListener('touchmove', aoCancelarToque, { passive: true });
+        divLote.addEventListener('touchcancel', aoCancelarToque);
+
+        divLote.addEventListener('click', (e) => {
+            if (modoSelecaoLotesAssinadas) {
+                e.stopPropagation();
+                alternarSelecaoLoteAssinadas(divLote, idLote);
+            }
+        });
+    }
+
+    function alternarSelecaoLoteAssinadas(divLote, idLote) {
+        if (lotesAssinadasSelecionados.has(idLote)) {
+            lotesAssinadasSelecionados.delete(idLote);
+            divLote.classList.remove('card-lote-selecionado');
+        } else {
+            lotesAssinadasSelecionados.add(idLote);
+            divLote.classList.add('card-lote-selecionado');
+        }
+
+        if (lotesAssinadasSelecionados.size === 0) {
+            limparSelecao();
+        } else {
+            const painel = document.getElementById('painelSelecao');
+            document.getElementById('txtQtdSelecionados').innerText = `${lotesAssinadasSelecionados.size} lote(s)`;
+            painel.style.display = 'flex';
+        }
+    }
+
     function alternarSelecaoItem(elementoTr, idUnico, textoCopiar, idLote, idItem) {
         if (itensSelecionados.has(idUnico)) {
             itensSelecionados.delete(idUnico);
@@ -1129,8 +1278,52 @@
             if (val.elementoTr) val.elementoTr.classList.remove('item-selecionado');
         });
         itensSelecionados.clear();
+
+        document.querySelectorAll('.card-lote-selecionado').forEach(el => el.classList.remove('card-lote-selecionado'));
+        lotesAssinadasSelecionados.clear();
+
         modoSelecaoAtivo = false;
+        modoSelecaoLotesAssinadas = false;
         document.getElementById('painelSelecao').style.display = 'none';
+    }
+
+    function copiarLotesAssinadasSelecionados() {
+        if (lotesAssinadasSelecionados.size === 0) return;
+
+        let textoCompleto = '';
+        let qtdItens = 0;
+        const senhaPadrao = appState.emails.senhaPadrao;
+
+        appState.emails.lotes.forEach(lote => {
+            if (lotesAssinadasSelecionados.has(lote.idLote)) {
+                lote.itens.forEach(item => {
+                    let linha = item.textoCompleto || item.principal;
+                    if (senhaPadrao) {
+                        let delimitador = linha.includes(':') ? ':' : (linha.includes('|') ? '|' : ':');
+                        linha = `${item.principal}${delimitador}${senhaPadrao}`;
+                    }
+                    textoCompleto += linha + '\n';
+                    qtdItens++;
+                });
+            }
+        });
+
+        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
+            mostrarStatus(`✅ ${qtdItens} contas dos lotes selecionados copiadas!`);
+            limparSelecao();
+        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+    }
+
+    function apagarLotesAssinadasSelecionados() {
+        if (lotesAssinadasSelecionados.size === 0) return;
+
+        mostrarModal('Apagar Lotes', `Deseja apagar os ${lotesAssinadasSelecionados.size} lotes de assinadas selecionados?`, () => {
+            appState.emails.lotes = appState.emails.lotes.filter(l => !lotesAssinadasSelecionados.has(l.idLote));
+            localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
+            renderizarTodosLotes('emails');
+            mostrarStatus('Lotes removidos!');
+            limparSelecao();
+        });
     }
 
     function copiarItensSelecionados() {
@@ -1467,12 +1660,20 @@
         let textoCompleto = '';
         let quantidadeCopiada = 0;
 
+        const senhaPadrao = appState.emails.senhaPadrao;
+
         lote.itens.forEach(item => {
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
             const trElemento = document.getElementById(`tr_${idUnico}`);
 
             if (trElemento && !trElemento.classList.contains('linha-oculta')) {
-                textoCompleto += (item.textoCompleto || item.principal) + '\n';
+                let linha = item.textoCompleto || item.principal;
+                if (senhaPadrao) {
+                    let delimitador = linha.includes(':') ? ':' : (linha.includes('|') ? '|' : ':');
+                    linha = `${item.principal}${delimitador}${senhaPadrao}`;
+                }
+
+                textoCompleto += linha + '\n';
                 quantidadeCopiada++;
                 if (!appState.emails.usados.includes(idUnico)) {
                     appState.emails.usados.push(idUnico);
@@ -1515,23 +1716,48 @@
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
+        const emailsJaEmAssinadas = new Set();
+        appState.emails.lotes.forEach(l => {
+            if (l.nome && l.nome.startsWith('ASSINADAS')) {
+                l.itens.forEach(i => {
+                    if (i.principal) emailsJaEmAssinadas.add(i.principal.toLowerCase().trim());
+                });
+            }
+        });
+
         const statusPermitidos = ['padrao', 'premium', 'assinada'];
         const itensParaMover = [];
         const itensManter = [];
 
         lote.itens.forEach(item => {
-            const emailChave = item.principal.toLowerCase();
+            const emailChave = item.principal.toLowerCase().trim();
             const statusAtual = appState.emails.status[emailChave] || item.status || '';
 
             if (statusPermitidos.includes(statusAtual)) {
-                itensParaMover.push(item);
+                if (!emailsJaEmAssinadas.has(emailChave)) {
+                    itensParaMover.push({
+                        ...item,
+                        statusAtual: statusAtual
+                    });
+                    emailsJaEmAssinadas.add(emailChave);
+                }
             } else {
                 itensManter.push(item);
             }
         });
 
         if (itensParaMover.length === 0) {
-            alert('⚠️ Nenhuma conta com status "Padrão", "Premium" ou "Assinada" foi encontrada neste lote.');
+            const existiaComStatus = lote.itens.some(item => {
+                const emailChave = item.principal.toLowerCase().trim();
+                const statusAtual = appState.emails.status[emailChave] || item.status || '';
+                return statusPermitidos.includes(statusAtual);
+            });
+
+            if (existiaComStatus) {
+                alert('⚠️ As contas deste lote já foram movidas anteriormente para uma pasta ASSINADAS.');
+            } else {
+                alert('⚠️ Nenhuma conta com status "Padrão", "Premium" ou "Assinada" foi encontrada neste lote.');
+            }
             return;
         }
 
@@ -1541,23 +1767,20 @@
         });
 
         copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
-            // Atualiza o lote original removendo os itens movidos
             lote.itens = itensManter;
 
-            // Prepara os itens para o novo lote
             const itensNovosLote = itensParaMover.map((item, idx) => ({
                 idItem: idx + 1,
                 principal: item.principal,
                 secundario: item.secundario,
                 terciario: '',
                 textoCompleto: item.textoCompleto,
-                status: 'assinada'
+                status: item.statusAtual
             }));
 
-            // Atualiza o mapa global de status para as contas movidas
             itensParaMover.forEach(item => {
-                const emailChave = item.principal.toLowerCase();
-                appState.emails.status[emailChave] = 'assinada';
+                const emailChave = item.principal.toLowerCase().trim();
+                appState.emails.status[emailChave] = item.statusAtual;
             });
 
             const novoLoteAssinadas = {
@@ -1574,7 +1797,7 @@
             localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
 
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${itensParaMover.length} conta(s) movida(s) para ASSINADAS!`);
+            mostrarStatus(`✅ ${itensParaMover.length} conta(s) movida(s) para a pasta ASSINADAS!`);
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
@@ -1746,11 +1969,24 @@
         const area = document.getElementById(areaId);
         area.innerHTML = '';
 
+        if (tipo === 'emails') {
+            document.getElementById('areaLotesAssinadas').innerHTML = '';
+        }
+
+        let totalLotesAssinadas = 0;
+
         appState[tipo].lotes.forEach(lote => {
+            const ehAssinada = tipo === 'emails' && lote.nome.startsWith('ASSINADAS');
+            if (ehAssinada) totalLotesAssinadas++;
+
             const estaAberto = appState[tipo].abertos.includes(lote.idLote);
             const divLote = document.createElement('div');
             divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
             divLote.id = `lote_${tipo}_${lote.idLote}`;
+
+            if (ehAssinada) {
+                vincularEventosCardLoteAssinadas(divLote, lote.idLote);
+            }
 
             const bannerDiv = document.createElement('div');
             bannerDiv.className = 'banner-lote';
@@ -1785,7 +2021,7 @@
                 btnGrupo.appendChild(btnCopiarT);
                 btnGrupo.appendChild(btnApagarL);
             } else if (tipo === 'emails') {
-                if (!lote.nome.startsWith('ASSINADAS')) {
+                if (!ehAssinada) {
                     const btnCopiarA = document.createElement('button');
                     btnCopiarA.className = 'btn-acao-lote btn-copiar-lote';
                     btnCopiarA.innerText = 'Mover Assinadas';
@@ -1841,7 +2077,11 @@
                 tr.id = `tr_${idUnico}`;
                 tr.className = `linha-item ${index > 0 ? 'linha-secundaria' : ''}`;
 
-                const textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto;
+                let textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto;
+                if (tipo === 'emails' && appState.emails.senhaPadrao) {
+                    let delimitador = textToCopy.includes(':') ? ':' : (textToCopy.includes('|') ? '|' : ':');
+                    textToCopy = `${item.principal}${delimitador}${appState.emails.senhaPadrao}`;
+                }
 
                 vincularEventosLinha(tr, idUnico, textToCopy, lote.idLote, item.idItem);
 
@@ -1869,7 +2109,7 @@
                     tr.innerHTML = `
                         <td><span class="badge-id">${item.idItem}</span></td>
                         <td class="email-text">${item.principal}</td>
-                        <td class="email-text">${item.secundario}</td>
+                        <td class="email-text">${appState.emails.senhaPadrao || item.secundario}</td>
                         <td>
                             <select class="status-select">
                                 <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
@@ -1884,7 +2124,7 @@
                         </td>
                         <td>
                             <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
-                            <button class="btn-excluir-item">🗑️</button>
+                            <button class="btn-excluir-item">🗑️️</button>
                         </td>
                     `;
 
@@ -1923,8 +2163,18 @@
             tabelaContainer.appendChild(tabela);
             conteudoDiv.appendChild(tabelaContainer);
             divLote.appendChild(conteudoDiv);
-            area.appendChild(divLote);
+
+            if (ehAssinada) {
+                document.getElementById('areaLotesAssinadas').appendChild(divLote);
+            } else {
+                area.appendChild(divLote);
+            }
         });
+
+        if (tipo === 'emails') {
+            document.getElementById('qtdLotesAssinadas').innerText = totalLotesAssinadas;
+            document.getElementById('cardPastaAssinadas').style.display = totalLotesAssinadas > 0 ? 'block' : 'none';
+        }
 
         filtrarItens(tipo);
     }
@@ -1976,7 +2226,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '11.6',
+            versao: '12.0',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
@@ -2077,6 +2327,8 @@
                 const eOcultarQueimadas = dadosEmails.ocultarQueimadas !== undefined ? dadosEmails.ocultarQueimadas : false;
                 const eStatus = dadosEmails.status || {};
                 const eUltimo = dadosEmails.ultimo || null;
+                const eSenhaPadrao = dadosEmails.senhaPadrao || '';
+                const ePastaAberta = dadosEmails.pastaAberta || false;
 
                 localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(eLotes));
                 localStorage.setItem(CHAVES.emails.usados, JSON.stringify(eUsados));
@@ -2090,6 +2342,8 @@
                 localStorage.setItem(CHAVES.emails.ocultarPremium, JSON.stringify(eOcultarPremium));
                 localStorage.setItem(CHAVES.emails.ocultarQueimadas, JSON.stringify(eOcultarQueimadas));
                 localStorage.setItem(CHAVES.emails.status, JSON.stringify(eStatus));
+                localStorage.setItem(CHAVES.emails.senhaPadrao, eSenhaPadrao);
+                localStorage.setItem(CHAVES.emails.pastaAberta, JSON.stringify(ePastaAberta));
                 if(eUltimo) localStorage.setItem(CHAVES.emails.ultimo, eUltimo);
 
                 // Dados
@@ -2106,7 +2360,7 @@
                 if(dUltimo) localStorage.setItem(CHAVES.dados.ultimo, dUltimo);
 
                 appState.cards = { lotes: cLotes, usados: cUsados, abertos: cAbertos, ocultar: cOcultar, ultimo: cUltimo };
-                appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, ocultarAnuncios: eOcultarAnuncios, ocultarPadrao: eOcultarPadrao, ocultarPremium: eOcultarPremium, ocultarQueimadas: eOcultarQueimadas, status: eStatus, ultimo: eUltimo };
+                appState.emails = { lotes: eLotes, usados: eUsados, abertos: eAbertos, ocultar: eOcultar, ocultarVirgens: eOcultarVirgens, ocultarSuspensas: eOcultarSuspensas, ocultarAssinadas: eOcultarAssinadas, ocultarAnuncios: eOcultarAnuncios, ocultarPadrao: eOcultarPadrao, ocultarPremium: eOcultarPremium, ocultarQueimadas: eOcultarQueimadas, status: eStatus, ultimo: eUltimo, senhaPadrao: eSenhaPadrao, pastaAberta: ePastaAberta };
                 appState.dados = { lotes: dLotes, usados: dUsados, abertos: dAbertos, ocultar: dOcultar, ultimo: dUltimo };
 
                 reordenarEAtualizarLotes('cards');
