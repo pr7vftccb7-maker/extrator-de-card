@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>bklogins - Extrator PRO</title>
+    <!-- Fonte Premium Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -12,7 +16,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #141414;
             color: #ffffff;
             padding-bottom: 90px; 
@@ -55,7 +59,7 @@
             color: #E50914;
             font-size: 26px;
             font-weight: 900;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-transform: lowercase;
         }
         .versao-tag {
@@ -67,16 +71,18 @@
             background-color: #E50914;
             color: #fff;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 800;
             padding: 4px 8px;
             border-radius: 4px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .instrucoes {
             font-size: 13px;
             color: #aaa;
             margin-bottom: 10px;
+            font-weight: 600;
         }
 
         .seletor-modo-container {
@@ -130,10 +136,11 @@
             border-radius: 4px;
             padding: 6px 10px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 700;
             outline: none;
             cursor: pointer;
             text-transform: uppercase;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .select-import-status:focus {
             border-color: #E50914;
@@ -145,7 +152,7 @@
             padding: 12px;
             border: 1px solid #333;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             background-color: #181818;
             color: #fff;
             resize: vertical;
@@ -165,12 +172,13 @@
             color: white;
             border: none;
             border-radius: 6px;
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 800;
             cursor: pointer;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             transition: background-color 0.2s, transform 0.1s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-processar:active {
             background-color: #B81D24;
@@ -189,11 +197,12 @@
             padding: 12px;
             border: 1px solid #333;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             outline: none;
             background: #181818;
             color: #fff;
             user-select: text;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .grupo-botoes-filtros {
             display: flex;
@@ -210,10 +219,11 @@
             border: 1px solid #444;
             border-radius: 6px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-filtro-usados.ativo {
             background-color: #E50914;
@@ -244,7 +254,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
             color: #34c759;
         }
@@ -264,9 +274,10 @@
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 800;
             cursor: pointer;
             transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-senha-padrao:hover {
             background-color: #34c759;
@@ -298,7 +309,7 @@
             padding: 6px 12px;
             border-radius: 20px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 800;
             z-index: 9999;
             pointer-events: none;
         }
@@ -342,7 +353,7 @@
             align-items: center;
             gap: 10px;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 14px;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
@@ -363,7 +374,7 @@
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 4px;
-            font-weight: bold;
+            font-weight: 800;
         }
 
         .grupo-botoes-cabecalho {
@@ -379,10 +390,11 @@
             padding: 5px 8px;
             border-radius: 4px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             backdrop-filter: blur(5px);
             transition: background 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-acao-lote:hover {
             background: #E50914;
@@ -419,7 +431,7 @@
         th {
             background-color: #1f1f1f;
             color: #808080;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             font-size: 11px;
             letter-spacing: 0.5px;
@@ -460,8 +472,9 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         
         .btn-copiar-sec {
@@ -472,9 +485,10 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 800;
             margin-right: 4px;
             transition: all 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-copiar-sec:hover {
             background-color: #444;
@@ -484,14 +498,14 @@
         .btn-copiar.usado, .btn-copiar-sec.usado {
             background-color: #333 !important;
             color: #777 !important;
-            font-weight: bold;
+            font-weight: 800;
             border-color: #333;
             cursor: default;
         }
         .btn-copiar.ultimo-copiado, .btn-copiar-sec.ultimo-copiado {
             background-color: #34c759 !important;
             color: #ffffff !important;
-            font-weight: bold;
+            font-weight: 800;
             box-shadow: 0 0 10px rgba(52, 199, 89, 0.3);
         }
 
@@ -503,7 +517,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
             margin-left: 6px;
             transition: all 0.2s;
         }
@@ -518,7 +532,7 @@
             padding: 3px 8px;
             border-radius: 4px;
             font-size: 11px;
-            font-weight: bold;
+            font-weight: 800;
             color: #aaa;
         }
         .cartao-num {
@@ -531,6 +545,7 @@
         .email-text {
             font-size: 13px;
             color: #ddd;
+            font-weight: 600;
         }
 
         .status-select {
@@ -540,10 +555,11 @@
             border-radius: 4px;
             padding: 4px 6px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             outline: none;
             cursor: pointer;
             text-transform: uppercase;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .status-select:focus {
             border-color: #E50914;
@@ -569,7 +585,7 @@
             gap: 8px;
             z-index: 2000;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 800;
             animation: bounceIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             max-width: 95%;
         }
@@ -588,6 +604,7 @@
             cursor: pointer;
             text-transform: uppercase;
             transition: background 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-copiar-selecionados:hover {
             background-color: #2ea84a;
@@ -603,6 +620,7 @@
             cursor: pointer;
             text-transform: uppercase;
             transition: background 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-apagar-selecionados:hover {
             background-color: #b81d24;
@@ -651,9 +669,10 @@
             background: transparent;
             border: none;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: color 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         .nav-item i {
@@ -688,7 +707,7 @@
         }
         .modal-titulo {
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 800;
             color: #fff;
             margin-bottom: 8px;
         }
@@ -696,6 +715,7 @@
             font-size: 13px;
             color: #aaa;
             margin-bottom: 20px;
+            font-weight: 600;
         }
         .modal-botoes {
             display: flex;
@@ -707,9 +727,10 @@
             padding: 10px;
             border-radius: 6px;
             border: none;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 13px;
             cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         .btn-modal-cancelar {
             background: #333333;
@@ -751,7 +772,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v12.0</div>
+                <div class="versao-tag">v13.0</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -772,7 +793,7 @@
             <input type="text" id="campoPesquisaCards" class="input-pesquisa" placeholder="🔍 Buscar cartão (16 dígitos)...">
             <div class="grupo-botoes-filtros">
                 <button id="btnOcultarUsadosCards" class="btn-filtro-usados">Ocultar Usados</button>
-                <button class="btn-backup btn-exp-backup">⬇️️ Backup</button>
+                <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
                 <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
         </div>
@@ -787,7 +808,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v12.0</div>
+                <div class="versao-tag">v13.0</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -847,7 +868,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v12.0</div>
+                <div class="versao-tag">v13.0</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1170,6 +1191,19 @@
             elementoVerde.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function renomearLote(tipo, idLote) {
+        const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
+        if (!lote) return;
+
+        const novoNome = prompt("Digite o novo nome para este card/lote:", lote.nome);
+        if (novoNome !== null && novoNome.trim() !== "") {
+            lote.nome = novoNome.trim();
+            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            renderizarTodosLotes(tipo);
+            mostrarStatus('✏️ Card renomeado!');
         }
     }
 
@@ -2007,6 +2041,14 @@
             divLote.appendChild(bannerDiv);
 
             const btnGrupo = bannerDiv.querySelector(`#botoesCab_${tipo}_${lote.idLote}`);
+            
+            // Botão para renomear
+            const btnRenomearL = document.createElement('button');
+            btnRenomearL.className = 'btn-acao-lote';
+            btnRenomearL.innerText = '✏️ Renomear';
+            btnRenomearL.onclick = (e) => { e.stopPropagation(); renomearLote(tipo, lote.idLote); };
+            btnGrupo.appendChild(btnRenomearL);
+
             if (tipo === 'cards') {
                 const btnCopiarT = document.createElement('button');
                 btnCopiarT.className = 'btn-acao-lote btn-copiar-lote';
@@ -2124,7 +2166,7 @@
                         </td>
                         <td>
                             <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
-                            <button class="btn-excluir-item">🗑️️</button>
+                            <button class="btn-excluir-item">🗑️</button>
                         </td>
                     `;
 
@@ -2226,7 +2268,7 @@
 
     function exportarBackup() {
         const backupData = {
-            versao: '12.0',
+            versao: '13.0',
             cards: appState.cards,
             emails: appState.emails,
             dados: appState.dados
