@@ -872,7 +872,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.6</div>
+                <div class="versao-tag">v16.7</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -912,7 +912,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.6</div>
+                <div class="versao-tag">v16.7</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -967,7 +967,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.6</div>
+                <div class="versao-tag">v16.7</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -998,7 +998,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.6</div>
+                <div class="versao-tag">v16.7</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1077,7 +1077,7 @@
         configBackup: 'config_autobackup_v16'
     };
 
-    const TEMPO_PRESSIONAR_SELECAO = 3000; // Tempo ajustado para 3 segundos
+    const TEMPO_PRESSIONAR_SELECAO = 3000;
 
     const BANNERS = [
         'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800&auto=format&fit=crop&q=80',
@@ -1219,7 +1219,6 @@
         mostrarStatus('📦 Lote arquivado com sucesso!');
     }
 
-    /* CORREÇÃO NA RESTAURAÇÃO DE LOTES ARQUIVADOS */
     function restaurarLoteArquivado(idArquivado) {
         const index = appState.arquivados.findIndex(a => a.idArquivado == idArquivado);
         if (index === -1) return;
@@ -1227,7 +1226,6 @@
         const itemArq = appState.arquivados[index];
         const tipo = itemArq.tipo;
 
-        // Garante a existência do lote na aba correta
         if (!appState[tipo].lotes) appState[tipo].lotes = [];
         appState[tipo].lotes.unshift(itemArq.lote);
 
@@ -1558,9 +1556,18 @@
         }
     }
 
-    /* AJUSTE DO TEMPO DE PRESSÃO PARA 3 SEGUNDOS */
+    /* SISTEMA DE PREVENÇÃO DE SELEÇÃO ACCIDENTAL DURANTE A NAVEGAÇÃO / ROLAGEM */
     function vincularEventosLinha(tr, idUnico, textToCopy, idLote, idItem) {
-        const aoIniciarToque = () => {
+        let startX = 0;
+        let startY = 0;
+
+        const aoIniciarToque = (e) => {
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+            if (timerPressionar) clearTimeout(timerPressionar);
+
             timerPressionar = setTimeout(() => {
                 modoSelecaoAtivo = true;
                 alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
@@ -1574,11 +1581,24 @@
             }
         };
 
+        const aoMoverToque = (e) => {
+            if (!timerPressionar) return;
+            const moveX = Math.abs(e.touches[0].clientX - startX);
+            const moveY = Math.abs(e.touches[0].clientY - startY);
+
+            // Se mover mais de 8 pixels cancela a seleção
+            if (moveX > 8 || moveY > 8) {
+                aoCancelarToque();
+            }
+        };
+
         tr.addEventListener('mousedown', aoIniciarToque);
         tr.addEventListener('mouseup', aoCancelarToque);
+        tr.addEventListener('mouseleave', aoCancelarToque);
+
         tr.addEventListener('touchstart', aoIniciarToque, { passive: true });
         tr.addEventListener('touchend', aoCancelarToque);
-        tr.addEventListener('touchmove', aoCancelarToque, { passive: true });
+        tr.addEventListener('touchmove', aoMoverToque, { passive: true });
         tr.addEventListener('touchcancel', aoCancelarToque);
 
         tr.addEventListener('click', (e) => {
@@ -1589,9 +1609,17 @@
         });
     }
 
-    /* AJUSTE DO TEMPO DE PRESSÃO NOS LOTES PARA 3 SEGUNDOS */
     function vincularEventosCardLote(divLote, idLote) {
-        const aoIniciarToque = () => {
+        let startX = 0;
+        let startY = 0;
+
+        const aoIniciarToque = (e) => {
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }
+            if (timerPressionar) clearTimeout(timerPressionar);
+
             timerPressionar = setTimeout(() => {
                 modoSelecaoLotes = true;
                 alternarSelecaoLote(divLote, idLote);
@@ -1605,11 +1633,23 @@
             }
         };
 
+        const aoMoverToque = (e) => {
+            if (!timerPressionar) return;
+            const moveX = Math.abs(e.touches[0].clientX - startX);
+            const moveY = Math.abs(e.touches[0].clientY - startY);
+
+            if (moveX > 8 || moveY > 8) {
+                aoCancelarToque();
+            }
+        };
+
         divLote.addEventListener('mousedown', aoIniciarToque);
         divLote.addEventListener('mouseup', aoCancelarToque);
+        divLote.addEventListener('mouseleave', aoCancelarToque);
+
         divLote.addEventListener('touchstart', aoIniciarToque, { passive: true });
         divLote.addEventListener('touchend', aoCancelarToque);
-        divLote.addEventListener('touchmove', aoCancelarToque, { passive: true });
+        divLote.addEventListener('touchmove', aoMoverToque, { passive: true });
         divLote.addEventListener('touchcancel', aoCancelarToque);
 
         divLote.addEventListener('click', (e) => {
@@ -2774,7 +2814,7 @@
 
     function gerarglobaisBackupJSON() {
         return JSON.stringify({
-            versao: '16.6',
+            versao: '16.7',
             dataExportacao: new Date().toLocaleString('pt-BR'),
             cards: appState.cards,
             emails: appState.emails,
