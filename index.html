@@ -268,6 +268,13 @@
             background-color: #E50914;
             border-color: #E50914;
         }
+        /* Ajuste do seletor para combinar com o botão */
+        select.btn-filtro-usados {
+            appearance: auto; 
+            outline: none;
+            text-align: left;
+            padding-left: 10px;
+        }
 
         .card-pasta-assinadas, .box-auto-backup, .box-lixeira, .box-arquivados {
             margin-top: 20px;
@@ -872,7 +879,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.8</div>
+                <div class="versao-tag">v16.9</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -912,7 +919,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.8</div>
+                <div class="versao-tag">v16.9</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -940,7 +947,18 @@
                 <button class="btn-limpar-pesquisa" id="btnLimparPesquisaEmails">✕</button>
             </div>
             <div class="grupo-botoes-filtros">
-                <button id="btnOcultarUsadosEmails" class="btn-filtro-usados">Ocultar Usados</button>
+                <!-- AQUI O BOTÃO FOI SUBSTITUÍDO PELO SELECT DE FILTRO DE STATUS -->
+                <select id="filtroStatusEmails" class="btn-filtro-usados">
+                    <option value="todos">Filtro: Todos</option>
+                    <option value="ocultar_usados">Ocultar Usados</option>
+                    <option value="virgem">Status: Virgem</option>
+                    <option value="suspensa">Status: Suspensa</option>
+                    <option value="assinada">Status: Assinada</option>
+                    <option value="anuncios">Status: Anúncios</option>
+                    <option value="padrao">Status: Padrão</option>
+                    <option value="premium">Status: Premium</option>
+                    <option value="queimada">Status: Queimada</option>
+                </select>
                 <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
                 <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
             </div>
@@ -967,7 +985,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.8</div>
+                <div class="versao-tag">v16.9</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -998,7 +1016,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.8</div>
+                <div class="versao-tag">v16.9</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1058,7 +1076,8 @@
             lotes: 'lotes_emails_geral',
             usados: 'botoes_usados_emails_geral',
             abertos: 'lotes_abertos_emails_geral',
-            ocultar: 'filtro_ocultar_emails_geral',
+            ocultar: 'filtro_ocultar_emails_geral', // Mantido para compatibilidade com versões antigas, caso exista.
+            filtroAtual: 'filtro_atual_emails_v16_9',
             status: 'status_emails_geral',
             ultimo: 'ultimo_copiado_emails_geral',
             senhaPadrao: 'senha_padrao_assinadas_geral',
@@ -1099,7 +1118,7 @@
             lotes: JSON.parse(localStorage.getItem(CHAVES.emails.lotes) || '[]'),
             usados: JSON.parse(localStorage.getItem(CHAVES.emails.usados) || '[]'),
             abertos: JSON.parse(localStorage.getItem(CHAVES.emails.abertos) || '[]'),
-            ocultar: JSON.parse(localStorage.getItem(CHAVES.emails.ocultar) || 'false'),
+            filtroAtual: localStorage.getItem(CHAVES.emails.filtroAtual) || 'todos',
             status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
             ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null,
             senhaPadrao: localStorage.getItem(CHAVES.emails.senhaPadrao) || '',
@@ -1483,8 +1502,17 @@
         });
 
         document.getElementById('btnOcultarUsadosCards').onclick = () => alternarFiltroCards();
-        document.getElementById('btnOcultarUsadosEmails').onclick = () => alternarFiltroEmails('usados');
         document.getElementById('btnOcultarUsadosDados').onclick = () => alternarFiltroDados();
+
+        // Novo Filtro em Select para aba Emails
+        const selectFiltroEmails = document.getElementById('filtroStatusEmails');
+        if (selectFiltroEmails) {
+            selectFiltroEmails.onchange = (e) => {
+                appState.emails.filtroAtual = e.target.value;
+                localStorage.setItem(CHAVES.emails.filtroAtual, appState.emails.filtroAtual);
+                filtrarItens('emails');
+            };
+        }
 
         document.querySelectorAll('.btn-exp-backup').forEach(b => b.onclick = exportarBackup);
         document.querySelectorAll('.btn-imp-backup').forEach(b => b.onclick = () => document.getElementById('fileImportGlobal').click());
@@ -1556,7 +1584,6 @@
         }
     }
 
-    /* CONTROLE DE EVENTOS DO ITEM (LINHA) SEPARADO DO LOTE */
     function vincularEventosLinha(tr, idUnico, textToCopy, idLote, idItem) {
         let startX = 0;
         let startY = 0;
@@ -1609,7 +1636,6 @@
         });
     }
 
-    /* CONTROLE DE EVENTOS DO LOTE (BANNER) SEPARADO DO ITEM */
     function vincularEventosCardLote(bannerDiv, divLote, idLote) {
         let startX = 0;
         let startY = 0;
@@ -1859,7 +1885,9 @@
 
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
             atualizarPainelSelecao();
-            if (appState[tipo].ocultar) filtrarItens(tipo);
+            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) {
+                filtrarItens(tipo);
+            }
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
@@ -2372,15 +2400,6 @@
         filtrarItens('dados');
     }
 
-    function alternarFiltroEmails(filtro) {
-        if (filtro === 'usados') {
-            appState.emails.ocultar = !appState.emails.ocultar;
-            localStorage.setItem(CHAVES.emails.ocultar, JSON.stringify(appState.emails.ocultar));
-        }
-        atualizarBotaoFiltroVisual('emails');
-        filtrarItens('emails');
-    }
-
     function atualizarBotaoFiltroVisual(tipo) {
         if (tipo === 'cards') {
             const btn = document.getElementById('btnOcultarUsadosCards');
@@ -2390,10 +2409,9 @@
             const btn = document.getElementById('btnOcultarUsadosDados');
             btn.innerText = appState.dados.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
             btn.classList.toggle('ativo', appState.dados.ocultar);
-        } else {
-            const btnU = document.getElementById('btnOcultarUsadosEmails');
-            btnU.innerText = appState.emails.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
-            btnU.classList.toggle('ativo', appState.emails.ocultar);
+        } else if (tipo === 'emails') {
+            const sel = document.getElementById('filtroStatusEmails');
+            if (sel) sel.value = appState.emails.filtroAtual;
         }
     }
 
@@ -2475,9 +2493,25 @@
                     );
                 }
 
-                let atendeFiltroUsado = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
+                let atendeFiltroEspecial = true;
 
-                if (atendePesquisa && atendeFiltroUsado) {
+                // NOVA LÓGICA DE FILTRO DE STATUS PARA EMAILS
+                if (tipo === 'emails') {
+                    const emailChave = item.principal.toLowerCase();
+                    const statusAtual = appState.emails.status[emailChave] || item.status || '';
+                    const filtroAtual = appState.emails.filtroAtual || 'todos';
+
+                    if (filtroAtual === 'ocultar_usados') {
+                        atendeFiltroEspecial = !jaFoiUsado || ehOUltimoCopiado;
+                    } else if (filtroAtual !== 'todos') {
+                        atendeFiltroEspecial = (statusAtual === filtroAtual);
+                    }
+                } else {
+                    // Lógica original de ocultar usados para as outras abas
+                    atendeFiltroEspecial = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
+                }
+
+                if (atendePesquisa && atendeFiltroEspecial) {
                     trElemento.classList.remove('linha-oculta');
                     linhasVisiveisNoLote++;
                 } else {
@@ -2493,7 +2527,15 @@
                     cardElemento.style.display = 'none';
                 }
             } else {
-                if (appState[tipo].ocultar && linhasVisiveisNoLote === 0) {
+                // Checagem genérica para esconder o lote inteiro se estiver vazio após o filtro
+                let deveOcultarLote = false;
+                if (tipo === 'emails' && appState.emails.filtroAtual !== 'todos') {
+                    deveOcultarLote = (linhasVisiveisNoLote === 0);
+                } else if (tipo !== 'emails' && appState[tipo].ocultar) {
+                    deveOcultarLote = (linhasVisiveisNoLote === 0);
+                }
+
+                if (deveOcultarLote) {
                     cardElemento.style.display = 'none';
                 } else {
                     cardElemento.style.display = 'block';
@@ -2805,7 +2847,9 @@
                 localStorage.setItem(CHAVES[tipo].ultimo, id);
             }
 
-            if (appState[tipo].ocultar) filtrarItens(tipo);
+            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) {
+                filtrarItens(tipo);
+            }
             
             mostrarStatus('Copiado!');
         }).catch(err => console.error('Erro ao copiar: ', err));
@@ -2813,7 +2857,7 @@
 
     function gerarglobaisBackupJSON() {
         return JSON.stringify({
-            versao: '16.8',
+            versao: '16.9',
             dataExportacao: new Date().toLocaleString('pt-BR'),
             cards: appState.cards,
             emails: appState.emails,
