@@ -1,28 +1,38 @@
-const CACHE_NAME = 'bklogins-cache-v16.9';
+const CACHE_NAME = 'bklogins-cache-auto';
 
-// Arquivos para salvar no cache do navegador
-const urlsToCache = [
-  './',
-  './index.html' // Se o seu arquivo principal tiver outro nome, mude aqui (ex: ./ferramenta.html)
-];
-
-// Instala o Service Worker e salva os arquivos no cache
+// Ao instalar, já tenta forçar a ativação imediata
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+  self.skipWaiting();
 });
 
-// Intercepta as requisições: se estiver offline, puxa do cache
+// Ao ativar, limpa qualquer lixo antigo e assume o controle
+self.addEventListener('activate', event => {
+  event.waitUntil(clients.claim());
+});
+
+// Interceptador inteligente (Stale-While-Revalidate)
 self.addEventListener('fetch', event => {
+  // Ignora requisições de outras origens (como imagens do Unsplash) para não dar erro
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Retorna o arquivo do cache se encontrar, senão busca na internet
-        return response || fetch(event.request);
-      })
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(response => {
+        // Tenta buscar a versão mais nova na internet silenciosamente
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          // Se a internet funcionar, atualiza o cache com a versão mais nova (v16, v17, v18...)
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
+        }).catch(() => {
+          // Se não tiver internet, ignora o erro e confia no que já tem salvo
+        });
+
+        // Se já tiver salvo no cache, exibe instantaneamente. 
+        // Se não tiver, espera a internet baixar.
+        return response || fetchPromise;
+      });
+    })
   );
 });
