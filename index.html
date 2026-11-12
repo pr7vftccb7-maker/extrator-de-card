@@ -268,7 +268,6 @@
             background-color: #E50914;
             border-color: #E50914;
         }
-        /* Ajuste do seletor para combinar com o botão */
         select.btn-filtro-usados {
             appearance: auto; 
             outline: none;
@@ -947,7 +946,6 @@
                 <button class="btn-limpar-pesquisa" id="btnLimparPesquisaEmails">✕</button>
             </div>
             <div class="grupo-botoes-filtros">
-                <!-- AQUI O BOTÃO FOI SUBSTITUÍDO PELO SELECT DE FILTRO DE STATUS -->
                 <select id="filtroStatusEmails" class="btn-filtro-usados">
                     <option value="todos">Filtro: Todos</option>
                     <option value="ocultar_usados">Ocultar Usados</option>
@@ -1076,7 +1074,7 @@
             lotes: 'lotes_emails_geral',
             usados: 'botoes_usados_emails_geral',
             abertos: 'lotes_abertos_emails_geral',
-            ocultar: 'filtro_ocultar_emails_geral', // Mantido para compatibilidade com versões antigas, caso exista.
+            ocultar: 'filtro_ocultar_emails_geral',
             filtroAtual: 'filtro_atual_emails_v16_9',
             status: 'status_emails_geral',
             ultimo: 'ultimo_copiado_emails_geral',
@@ -1096,7 +1094,7 @@
         configBackup: 'config_autobackup_v16'
     };
 
-    const TEMPO_PRESSIONAR_SELECAO = 800; // Tempo reduzido para 800ms
+    const TEMPO_PRESSIONAR_SELECAO = 800; 
 
     const BANNERS = [
         'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800&auto=format&fit=crop&q=80',
@@ -1239,23 +1237,33 @@
     }
 
     function restaurarLoteArquivado(idArquivado) {
-        const index = appState.arquivados.findIndex(a => a.idArquivado == idArquivado);
-        if (index === -1) return;
+        // 1. Avisa o usuário que o processo começou
+        mostrarStatus('⏳ Restaurando Lote... Aguarde.');
 
-        const itemArq = appState.arquivados[index];
-        const tipo = itemArq.tipo;
+        // 2. Dá um pequeno atraso (50ms) para o navegador não congelar o clique
+        setTimeout(() => {
+            const index = appState.arquivados.findIndex(a => a.idArquivado == idArquivado);
+            if (index === -1) return;
 
-        if (!appState[tipo].lotes) appState[tipo].lotes = [];
-        appState[tipo].lotes.unshift(itemArq.lote);
+            const itemArq = appState.arquivados[index];
+            const tipo = itemArq.tipo;
 
-        appState.arquivados.splice(index, 1);
+            if (!appState[tipo].lotes) appState[tipo].lotes = [];
+            
+            // Move o lote de volta para a tela principal
+            appState[tipo].lotes.unshift(itemArq.lote);
+            appState.arquivados.splice(index, 1);
 
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-        localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
+            // Salva na memória
+            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
 
-        renderizarTodosLotes(tipo);
-        renderizarArquivados();
-        mostrarStatus('✅ Lote restaurado com sucesso!');
+            // Atualiza as telas
+            renderizarTodosLotes(tipo);
+            renderizarArquivados();
+            
+            mostrarStatus('✅ Lote restaurado com sucesso!');
+        }, 50);
     }
 
     function deletarPermanenteArquivado(idArquivado) {
@@ -1504,7 +1512,6 @@
         document.getElementById('btnOcultarUsadosCards').onclick = () => alternarFiltroCards();
         document.getElementById('btnOcultarUsadosDados').onclick = () => alternarFiltroDados();
 
-        // Novo Filtro em Select para aba Emails
         const selectFiltroEmails = document.getElementById('filtroStatusEmails');
         if (selectFiltroEmails) {
             selectFiltroEmails.onchange = (e) => {
@@ -2495,7 +2502,6 @@
 
                 let atendeFiltroEspecial = true;
 
-                // NOVA LÓGICA DE FILTRO DE STATUS PARA EMAILS
                 if (tipo === 'emails') {
                     const emailChave = item.principal.toLowerCase();
                     const statusAtual = appState.emails.status[emailChave] || item.status || '';
@@ -2507,7 +2513,6 @@
                         atendeFiltroEspecial = (statusAtual === filtroAtual);
                     }
                 } else {
-                    // Lógica original de ocultar usados para as outras abas
                     atendeFiltroEspecial = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
                 }
 
@@ -2527,7 +2532,6 @@
                     cardElemento.style.display = 'none';
                 }
             } else {
-                // Checagem genérica para esconder o lote inteiro se estiver vazio após o filtro
                 let deveOcultarLote = false;
                 if (tipo === 'emails' && appState.emails.filtroAtual !== 'todos') {
                     deveOcultarLote = (linhasVisiveisNoLote === 0);
@@ -2588,14 +2592,12 @@
             bannerDiv.className = 'banner-lote';
             bannerDiv.style.backgroundImage = `url('${lote.banner}')`;
             
-            // Controle alterado para não abrir o lote se estivermos em modo de seleção
             bannerDiv.onclick = (e) => {
                 if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
                 if (modoSelecaoLotes) return; 
                 alternarLote(tipo, lote.idLote);
             };
 
-            // Vínculo correto da detecção de toque de Lotes agora diretamente no Banner
             vincularEventosCardLote(bannerDiv, divLote, lote.idLote);
 
             bannerDiv.innerHTML = `
