@@ -847,6 +847,12 @@
 </head>
 <body>
 
+<!-- MENSAGEM DE LOADING INICIAL -->
+<div id="loadingInicial" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #141414; z-index: 99999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <h2 style="color: #E50914; font-weight: 900; margin-bottom: 10px;">bklogins</h2>
+    <p style="color: #888; font-size: 14px;">Carregando banco de dados...</p>
+</div>
+
 <div class="status-scroll" id="statusScroll" style="display: none;">Posição salva</div>
 
 <div id="customModal" class="modal-overlay">
@@ -878,7 +884,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.9</div>
+                <div class="versao-tag">v17.0 Ultra</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -918,7 +924,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.9</div>
+                <div class="versao-tag">v17.0 Ultra</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -983,7 +989,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.9</div>
+                <div class="versao-tag">v17.0 Ultra</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1014,7 +1020,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v16.9</div>
+                <div class="versao-tag">v17.0 Ultra</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1062,32 +1068,53 @@
 </nav>
 
 <script>
+    // ==========================================
+    // 1. MOTOR DO BANCO DE DADOS (IndexedDB)
+    // ==========================================
+    const BancoDB = {
+        db: null,
+        init() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open('bklogins_db_v17', 1);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('dados')) {
+                        db.createObjectStore('dados');
+                    }
+                };
+                req.onsuccess = (e) => {
+                    this.db = e.target.result;
+                    resolve();
+                };
+                req.onerror = () => reject('Erro ao iniciar IndexedDB');
+            });
+        },
+        get(key) {
+            return new Promise((resolve) => {
+                try {
+                    const tx = this.db.transaction('dados', 'readonly');
+                    const req = tx.objectStore('dados').get(key);
+                    req.onsuccess = () => resolve(req.result !== undefined ? req.result : null);
+                    req.onerror = () => resolve(null);
+                } catch(e) { resolve(null); }
+            });
+        },
+        set(key, value) {
+            return new Promise((resolve) => {
+                try {
+                    const tx = this.db.transaction('dados', 'readwrite');
+                    const req = tx.objectStore('dados').put(value, key);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => resolve();
+                } catch(e) { resolve(); }
+            });
+        }
+    };
+
     const CHAVES = {
-        cards: {
-            lotes: 'lotes_cartoes_geral',
-            usados: 'botoes_usados_cartoes_geral',
-            abertos: 'lotes_abertos_cartoes_geral',
-            ocultar: 'filtro_ocultar_cartoes_geral',
-            ultimo: 'ultimo_copiado_cartoes_geral'
-        },
-        emails: {
-            lotes: 'lotes_emails_geral',
-            usados: 'botoes_usados_emails_geral',
-            abertos: 'lotes_abertos_emails_geral',
-            ocultar: 'filtro_ocultar_emails_geral',
-            filtroAtual: 'filtro_atual_emails_v16_9',
-            status: 'status_emails_geral',
-            ultimo: 'ultimo_copiado_emails_geral',
-            senhaPadrao: 'senha_padrao_assinadas_geral',
-            pastaAberta: 'pasta_assinadas_aberta'
-        },
-        dados: {
-            lotes: 'lotes_dados_geral',
-            usados: 'botoes_usados_dados_geral',
-            abertos: 'lotes_abertos_dados_geral',
-            ocultar: 'filtro_ocultar_dados_geral',
-            ultimo: 'ultimo_copiado_dados_geral'
-        },
+        cards: { lotes: 'lotes_cartoes_geral', usados: 'botoes_usados_cartoes_geral', abertos: 'lotes_abertos_cartoes_geral', ocultar: 'filtro_ocultar_cartoes_geral', ultimo: 'ultimo_copiado_cartoes_geral' },
+        emails: { lotes: 'lotes_emails_geral', usados: 'botoes_usados_emails_geral', abertos: 'lotes_abertos_emails_geral', ocultar: 'filtro_ocultar_emails_geral', filtroAtual: 'filtro_atual_emails_v16_9', status: 'status_emails_geral', ultimo: 'ultimo_copiado_emails_geral', senhaPadrao: 'senha_padrao_assinadas_geral', pastaAberta: 'pasta_assinadas_aberta' },
+        dados: { lotes: 'lotes_dados_geral', usados: 'botoes_usados_dados_geral', abertos: 'lotes_abertos_dados_geral', ocultar: 'filtro_ocultar_dados_geral', ultimo: 'ultimo_copiado_dados_geral' },
         lixeira: 'lixeira_sistema_v1',
         arquivados: 'arquivados_sistema_v1',
         abaAtiva: 'aba_ativa_v10',
@@ -1105,33 +1132,10 @@
     ];
 
     let appState = {
-        cards: {
-            lotes: JSON.parse(localStorage.getItem(CHAVES.cards.lotes) || '[]'),
-            usados: JSON.parse(localStorage.getItem(CHAVES.cards.usados) || '[]'),
-            abertos: JSON.parse(localStorage.getItem(CHAVES.cards.abertos) || '[]'),
-            ocultar: JSON.parse(localStorage.getItem(CHAVES.cards.ocultar) || 'false'),
-            ultimo: localStorage.getItem(CHAVES.cards.ultimo) || null
-        },
-        emails: {
-            lotes: JSON.parse(localStorage.getItem(CHAVES.emails.lotes) || '[]'),
-            usados: JSON.parse(localStorage.getItem(CHAVES.emails.usados) || '[]'),
-            abertos: JSON.parse(localStorage.getItem(CHAVES.emails.abertos) || '[]'),
-            filtroAtual: localStorage.getItem(CHAVES.emails.filtroAtual) || 'todos',
-            status: JSON.parse(localStorage.getItem(CHAVES.emails.status) || '{}'),
-            ultimo: localStorage.getItem(CHAVES.emails.ultimo) || null,
-            senhaPadrao: localStorage.getItem(CHAVES.emails.senhaPadrao) || '',
-            pastaAberta: JSON.parse(localStorage.getItem(CHAVES.emails.pastaAberta) || 'false')
-        },
-        dados: {
-            lotes: JSON.parse(localStorage.getItem(CHAVES.dados.lotes) || '[]'),
-            usados: JSON.parse(localStorage.getItem(CHAVES.dados.usados) || '[]'),
-            abertos: JSON.parse(localStorage.getItem(CHAVES.dados.abertos) || '[]'),
-            ocultar: JSON.parse(localStorage.getItem(CHAVES.dados.ocultar) || 'false'),
-            ultimo: localStorage.getItem(CHAVES.dados.ultimo) || null
-        },
-        lixeira: JSON.parse(localStorage.getItem(CHAVES.lixeira) || '[]'),
-        arquivados: JSON.parse(localStorage.getItem(CHAVES.arquivados) || '[]'),
-        abaAtiva: localStorage.getItem(CHAVES.abaAtiva) || 'cards'
+        cards: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
+        emails: { lotes: [], usados: [], abertos: [], filtroAtual: 'todos', status: {}, ultimo: null, senhaPadrao: '', pastaAberta: false },
+        dados: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
+        lixeira: [], arquivados: [], abaAtiva: 'cards'
     };
 
     let modoSelecaoAtivo = false;
@@ -1140,6 +1144,97 @@
     let lotesSelecionados = new Set();
     let timerPressionar = null;
     let acaoModalPendente = null;
+
+    // ==========================================
+    // 2. INICIALIZAÇÃO ASSÍNCRONA & AUTO-MIGRAÇÃO
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            await BancoDB.init();
+            
+            // Script de Auto-Migração do LocalStorage antigo para o BancoDB
+            const migrado = await BancoDB.get('migracao_v17_concluida');
+            if (!migrado) {
+                console.log("Iniciando migração dos dados antigos...");
+                const chavesAll = [
+                    CHAVES.cards.lotes, CHAVES.cards.usados, CHAVES.cards.abertos, CHAVES.cards.ocultar, CHAVES.cards.ultimo,
+                    CHAVES.emails.lotes, CHAVES.emails.usados, CHAVES.emails.abertos, CHAVES.emails.filtroAtual, CHAVES.emails.status, CHAVES.emails.ultimo, CHAVES.emails.senhaPadrao, CHAVES.emails.pastaAberta,
+                    CHAVES.dados.lotes, CHAVES.dados.usados, CHAVES.dados.abertos, CHAVES.dados.ocultar, CHAVES.dados.ultimo,
+                    CHAVES.lixeira, CHAVES.arquivados, CHAVES.abaAtiva, CHAVES.configBackup
+                ];
+                
+                for (let k of chavesAll) {
+                    const velho = localStorage.getItem(k);
+                    if (velho !== null) {
+                        try {
+                            await BancoDB.set(k, JSON.parse(velho)); // Se for array/obj
+                        } catch(e) {
+                            await BancoDB.set(k, velho); // Se for string simples
+                        }
+                    }
+                }
+                await BancoDB.set('migracao_v17_concluida', true);
+            }
+
+            // Carrega todos os dados do banco para a Memória RAM
+            appState.cards.lotes = await BancoDB.get(CHAVES.cards.lotes) || [];
+            appState.cards.usados = await BancoDB.get(CHAVES.cards.usados) || [];
+            appState.cards.abertos = await BancoDB.get(CHAVES.cards.abertos) || [];
+            appState.cards.ocultar = await BancoDB.get(CHAVES.cards.ocultar) || false;
+            appState.cards.ultimo = await BancoDB.get(CHAVES.cards.ultimo) || null;
+
+            appState.emails.lotes = await BancoDB.get(CHAVES.emails.lotes) || [];
+            appState.emails.usados = await BancoDB.get(CHAVES.emails.usados) || [];
+            appState.emails.abertos = await BancoDB.get(CHAVES.emails.abertos) || [];
+            appState.emails.filtroAtual = await BancoDB.get(CHAVES.emails.filtroAtual) || 'todos';
+            appState.emails.status = await BancoDB.get(CHAVES.emails.status) || {};
+            appState.emails.ultimo = await BancoDB.get(CHAVES.emails.ultimo) || null;
+            appState.emails.senhaPadrao = await BancoDB.get(CHAVES.emails.senhaPadrao) || '';
+            appState.emails.pastaAberta = await BancoDB.get(CHAVES.emails.pastaAberta) || false;
+
+            appState.dados.lotes = await BancoDB.get(CHAVES.dados.lotes) || [];
+            appState.dados.usados = await BancoDB.get(CHAVES.dados.usados) || [];
+            appState.dados.abertos = await BancoDB.get(CHAVES.dados.abertos) || [];
+            appState.dados.ocultar = await BancoDB.get(CHAVES.dados.ocultar) || false;
+            appState.dados.ultimo = await BancoDB.get(CHAVES.dados.ultimo) || null;
+
+            appState.lixeira = await BancoDB.get(CHAVES.lixeira) || [];
+            appState.arquivados = await BancoDB.get(CHAVES.arquivados) || [];
+            appState.abaAtiva = await BancoDB.get(CHAVES.abaAtiva) || 'cards';
+
+            // Remove a tela de carregamento
+            document.getElementById('loadingInicial').style.display = 'none';
+
+            // Inicializa a interface
+            reordenarEAtualizarLotes('cards');
+            reordenarEAtualizarLotes('emails');
+            reordenarEAtualizarLotes('dados');
+
+            configurarEventosGerais();
+            carregarConfiguracoesBackup();
+
+            mudarAba(appState.abaAtiva, false);
+            atualizarBotaoFiltroVisual('cards');
+            atualizarBotaoFiltroVisual('emails');
+            atualizarBotaoFiltroVisual('dados');
+            
+            renderizarTodosLotes('cards');
+            renderizarTodosLotes('emails');
+            renderizarTodosLotes('dados');
+            renderizarLixeira();
+            renderizarArquivados();
+
+            if (appState.emails.pastaAberta) {
+                document.getElementById('cardPastaAssinadas').classList.add('aberto');
+            }
+
+            setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
+
+        } catch (erroDB) {
+            alert('Falha crítica ao iniciar Banco de Dados. Limpe o cache do navegador.');
+            console.error(erroDB);
+        }
+    });
 
     function copiarParaAreaTransferencia(texto) {
         if (navigator.clipboard && window.isSecureContext) {
@@ -1198,7 +1293,7 @@
             }
         });
         if (alterou) {
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
         }
     }
 
@@ -1211,7 +1306,7 @@
             dataDelecao: gerarDataHoraFormatada()
         };
         appState.lixeira.unshift(obj);
-        localStorage.setItem(CHAVES.lixeira, JSON.stringify(appState.lixeira));
+        BancoDB.set(CHAVES.lixeira, appState.lixeira);
         renderizarLixeira();
     }
 
@@ -1228,8 +1323,8 @@
         });
 
         appState[tipo].lotes.splice(index, 1);
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-        localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
+        BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
+        BancoDB.set(CHAVES.arquivados, appState.arquivados);
 
         renderizarTodosLotes(tipo);
         renderizarArquivados();
@@ -1241,43 +1336,29 @@
 
         setTimeout(() => {
             try {
-                // Procura o lote arquivado garantindo que os IDs sejam comparados como texto
                 const index = appState.arquivados.findIndex(a => String(a.idArquivado) === String(idArquivado));
-                
-                if (index === -1) {
-                    alert('❌ Erro: O sistema não encontrou o ID desse lote nos arquivados.');
-                    mostrarStatus('Erro na busca.');
-                    return;
-                }
+                if (index === -1) return;
 
                 const itemArq = appState.arquivados[index];
                 const tipo = itemArq.tipo;
 
                 if (!appState[tipo].lotes) appState[tipo].lotes = [];
-                
-                // Move o lote para a aba principal
                 appState[tipo].lotes.unshift(itemArq.lote);
                 appState.arquivados.splice(index, 1);
 
-                // Salva a alteração na memória do navegador
-                localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-                localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
+                BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
+                BancoDB.set(CHAVES.arquivados, appState.arquivados);
 
-                // Em vez de forçar a tela a redesenhar tudo (o que trava a aba), 
-                // recarregamos a página. É instantâneo, seguro e exibe o lote restaurado perfeitamente.
                 window.location.reload();
-                
             } catch (erro) {
-                // Se der erro, ele não vai mais travar silenciosamente. Ele vai gritar o motivo:
-                alert('❌ O código falhou com este erro exato:\n\n' + erro.name + ': ' + erro.message + '\n\nPor favor, me envie essa mensagem para eu consertar!');
-                mostrarStatus('❌ Falha na restauração.');
+                alert('❌ Ocorreu um erro no banco de dados durante a restauração.');
             }
         }, 100);
     }
 
     function deletarPermanenteArquivado(idArquivado) {
         appState.arquivados = appState.arquivados.filter(a => a.idArquivado != idArquivado);
-        localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
+        BancoDB.set(CHAVES.arquivados, appState.arquivados);
         renderizarArquivados();
     }
 
@@ -1357,8 +1438,8 @@
         appState.lixeira.splice(index, 1);
 
         reordenarEAtualizarLotes(tipo);
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-        localStorage.setItem(CHAVES.lixeira, JSON.stringify(appState.lixeira));
+        BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
+        BancoDB.set(CHAVES.lixeira, appState.lixeira);
 
         renderizarTodosLotes(tipo);
         renderizarLixeira();
@@ -1367,39 +1448,12 @@
 
     function deletarPermanenteLixeira(idLixeira) {
         appState.lixeira = appState.lixeira.filter(i => i.idLixeira != idLixeira);
-        localStorage.setItem(CHAVES.lixeira, JSON.stringify(appState.lixeira));
+        BancoDB.set(CHAVES.lixeira, appState.lixeira);
         renderizarLixeira();
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        reordenarEAtualizarLotes('cards');
-        reordenarEAtualizarLotes('emails');
-        reordenarEAtualizarLotes('dados');
-
-        configurarEventosGerais();
-        carregarConfiguracoesBackup();
-
-        mudarAba(appState.abaAtiva, false);
-        
-        atualizarBotaoFiltroVisual('cards');
-        atualizarBotaoFiltroVisual('emails');
-        atualizarBotaoFiltroVisual('dados');
-        
-        renderizarTodosLotes('cards');
-        renderizarTodosLotes('emails');
-        renderizarTodosLotes('dados');
-        renderizarLixeira();
-        renderizarArquivados();
-
-        if (appState.emails.pastaAberta) {
-            document.getElementById('cardPastaAssinadas').classList.add('aberto');
-        }
-
-        setTimeout(() => { rolarParaUltimoCopiado(appState.abaAtiva); }, 150);
-    });
-
-    function carregarConfiguracoesBackup() {
-        const cfg = JSON.parse(localStorage.getItem(CHAVES.configBackup) || '{}');
+    async function carregarConfiguracoesBackup() {
+        const cfg = await BancoDB.get(CHAVES.configBackup) || {};
         if (cfg.telegramToken) document.getElementById('cfgTelegramToken').value = cfg.telegramToken;
         if (cfg.telegramChatId) document.getElementById('cfgTelegramChatId').value = cfg.telegramChatId;
         if (cfg.gmailPara) document.getElementById('cfgGmailPara').value = cfg.gmailPara;
@@ -1411,7 +1465,7 @@
             telegramChatId: document.getElementById('cfgTelegramChatId').value.trim(),
             gmailPara: document.getElementById('cfgGmailPara').value.trim()
         };
-        localStorage.setItem(CHAVES.configBackup, JSON.stringify(cfg));
+        BancoDB.set(CHAVES.configBackup, cfg);
     }
 
     function configurarEventosGerais() {
@@ -1424,7 +1478,7 @@
             if (appState.lixeira.length === 0) return;
             mostrarModal('Esvaziar Lixeira', 'Deseja apagar definitivamente todos os itens salvos na lixeira?', () => {
                 appState.lixeira = [];
-                localStorage.setItem(CHAVES.lixeira, JSON.stringify([]));
+                BancoDB.set(CHAVES.lixeira, []);
                 renderizarLixeira();
                 mostrarStatus('Lixeira limpa!');
             });
@@ -1435,7 +1489,7 @@
             const pasta = document.getElementById('cardPastaAssinadas');
             pasta.classList.toggle('aberto');
             appState.emails.pastaAberta = pasta.classList.contains('aberto');
-            localStorage.setItem(CHAVES.emails.pastaAberta, JSON.stringify(appState.emails.pastaAberta));
+            BancoDB.set(CHAVES.emails.pastaAberta, appState.emails.pastaAberta);
         };
 
         document.getElementById('btnConfigSenhaPadrao').onclick = () => {
@@ -1443,18 +1497,15 @@
             const novaSenha = prompt("Digite a senha padrão desejada para as contas ASSINADAS (Deixe em branco para usar a senha original):", senhaAtual);
             if (novaSenha !== null) {
                 appState.emails.senhaPadrao = novaSenha.trim();
-                localStorage.setItem(CHAVES.emails.senhaPadrao, appState.emails.senhaPadrao);
+                BancoDB.set(CHAVES.emails.senhaPadrao, appState.emails.senhaPadrao);
                 mostrarStatus('🔑 Senha padrão atualizada!');
             }
         };
 
         document.getElementById('btnImportarCards').onclick = () => {
             const modoLive = document.getElementById('modoMarcarLiveCards').checked;
-            if (modoLive) {
-                marcarCartoesLive();
-            } else {
-                adicionarLote('cards');
-            }
+            if (modoLive) marcarCartoesLive();
+            else adicionarLote('cards');
         };
 
         document.getElementById('btnCarregarArquivoTxtCards').onclick = () => {
@@ -1464,16 +1515,11 @@
         document.getElementById('fileImportTxtCards').onchange = (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(evt) {
                 document.getElementById('entradaDadosCards').value = evt.target.result;
-                const modoLive = document.getElementById('modoMarcarLiveCards').checked;
-                if (modoLive) {
-                    marcarCartoesLive();
-                } else {
-                    adicionarLote('cards');
-                }
+                if (document.getElementById('modoMarcarLiveCards').checked) marcarCartoesLive();
+                else adicionarLote('cards');
                 e.target.value = '';
             };
             reader.readAsText(file);
@@ -1485,7 +1531,6 @@
                 const btn = document.getElementById('btnImportarCards');
                 const inst = document.getElementById('instrucoesCards');
                 const areaText = document.getElementById('entradaDadosCards');
-
                 if (isLive) {
                     btn.innerText = '🟢 Marcar Cartões Como LIVE';
                     inst.innerHTML = 'Cole a lista de cartões LIVE (serão identificados pelos <strong>16 dígitos</strong>):';
@@ -1504,12 +1549,10 @@
         ['Cards', 'Emails', 'Dados'].forEach(tipo => {
             const campo = document.getElementById(`campoPesquisa${tipo}`);
             const btnLimpar = document.getElementById(`btnLimparPesquisa${tipo}`);
-            
             campo.addEventListener('input', () => {
                 btnLimpar.style.display = campo.value.trim().length > 0 ? 'block' : 'none';
                 filtrarItens(tipo.toLowerCase());
             });
-
             btnLimpar.addEventListener('click', (e) => {
                 e.preventDefault();
                 campo.value = '';
@@ -1525,7 +1568,7 @@
         if (selectFiltroEmails) {
             selectFiltroEmails.onchange = (e) => {
                 appState.emails.filtroAtual = e.target.value;
-                localStorage.setItem(CHAVES.emails.filtroAtual, appState.emails.filtroAtual);
+                BancoDB.set(CHAVES.emails.filtroAtual, appState.emails.filtroAtual);
                 filtrarItens('emails');
             };
         }
@@ -1534,24 +1577,13 @@
         document.querySelectorAll('.btn-imp-backup').forEach(b => b.onclick = () => document.getElementById('fileImportGlobal').click());
         document.getElementById('fileImportGlobal').onchange = importarBackup;
 
-        document.getElementById('btnCopiarSel').onclick = () => {
-            if (modoSelecaoLotes) copiarLotesSelecionados();
-            else copiarItensSelecionados();
-        };
+        document.getElementById('btnCopiarSel').onclick = () => { modoSelecaoLotes ? copiarLotesSelecionados() : copiarItensSelecionados(); };
         document.getElementById('btnJuntarSel').onclick = juntarLotesSelecionados;
         document.getElementById('btnArquivarSel').onclick = arquivarLotesSelecionados;
-        document.getElementById('btnApagarSel').onclick = () => {
-            if (modoSelecaoLotes) apagarLotesSelecionados();
-            else apagarItensSelecionados();
-        };
+        document.getElementById('btnApagarSel').onclick = () => { modoSelecaoLotes ? apagarLotesSelecionados() : apagarItensSelecionados(); };
         document.getElementById('btnCancelarSel').onclick = limparSelecao;
-
         document.getElementById('btnModalCancelar').onclick = fecharModal;
-        document.getElementById('btnModalConfirmar').onclick = () => {
-            if (acaoModalPendente) acaoModalPendente();
-            fecharModal();
-        };
-
+        document.getElementById('btnModalConfirmar').onclick = () => { if (acaoModalPendente) acaoModalPendente(); fecharModal(); };
         document.getElementById('btnEnviarTelegramManual').onclick = enviarTelegramManual;
         document.getElementById('btnEnviarEmailManual').onclick = enviarEmailManual;
     }
@@ -1559,7 +1591,7 @@
     function mudarAba(aba, focarUltimo = true) {
         limparSelecao();
         appState.abaAtiva = aba;
-        localStorage.setItem(CHAVES.abaAtiva, aba);
+        BancoDB.set(CHAVES.abaAtiva, aba);
 
         document.getElementById('view-cards').classList.remove('active');
         document.getElementById('view-emails').classList.remove('active');
@@ -1590,107 +1622,59 @@
     function renomearLote(tipo, idLote) {
         const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
         if (!lote) return;
-
         const novoNome = prompt("Digite o novo nome para este card/lote:", lote.nome);
         if (novoNome !== null && novoNome.trim() !== "") {
             lote.nome = novoNome.trim();
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
             renderizarTodosLotes(tipo);
             mostrarStatus('✏️ Card renomeado!');
         }
     }
 
     function vincularEventosLinha(tr, idUnico, textToCopy, idLote, idItem) {
-        let startX = 0;
-        let startY = 0;
-
+        let startX = 0, startY = 0;
         const aoIniciarToque = (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
-            if (e.type === 'touchstart') {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
+            if (e.type === 'touchstart') { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
             if (timerPressionar) clearTimeout(timerPressionar);
-
-            timerPressionar = setTimeout(() => {
-                modoSelecaoAtivo = true;
-                alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
-            }, TEMPO_PRESSIONAR_SELECAO);
+            timerPressionar = setTimeout(() => { modoSelecaoAtivo = true; alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem); }, TEMPO_PRESSIONAR_SELECAO);
         };
-
-        const aoCancelarToque = () => {
-            if (timerPressionar) {
-                clearTimeout(timerPressionar);
-                timerPressionar = null;
-            }
-        };
-
+        const aoCancelarToque = () => { if (timerPressionar) { clearTimeout(timerPressionar); timerPressionar = null; } };
         const aoMoverToque = (e) => {
             if (!timerPressionar) return;
-            const moveX = Math.abs(e.touches[0].clientX - startX);
-            const moveY = Math.abs(e.touches[0].clientY - startY);
-
-            if (moveX > 8 || moveY > 8) {
-                aoCancelarToque();
-            }
+            if (Math.abs(e.touches[0].clientX - startX) > 8 || Math.abs(e.touches[0].clientY - startY) > 8) aoCancelarToque();
         };
 
         tr.addEventListener('mousedown', aoIniciarToque);
         tr.addEventListener('mouseup', aoCancelarToque);
         tr.addEventListener('mouseleave', aoCancelarToque);
-
         tr.addEventListener('touchstart', aoIniciarToque, { passive: true });
         tr.addEventListener('touchend', aoCancelarToque);
         tr.addEventListener('touchmove', aoMoverToque, { passive: true });
         tr.addEventListener('touchcancel', aoCancelarToque);
-
         tr.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') return;
-            if (modoSelecaoAtivo) {
-                alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
-            }
+            if (modoSelecaoAtivo) alternarSelecaoItem(tr, idUnico, textToCopy, idLote, idItem);
         });
     }
 
     function vincularEventosCardLote(bannerDiv, divLote, idLote) {
-        let startX = 0;
-        let startY = 0;
-
+        let startX = 0, startY = 0;
         const aoIniciarToque = (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-            if (e.type === 'touchstart') {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            }
+            if (e.type === 'touchstart') { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
             if (timerPressionar) clearTimeout(timerPressionar);
-
-            timerPressionar = setTimeout(() => {
-                modoSelecaoLotes = true;
-                alternarSelecaoLote(divLote, idLote);
-            }, TEMPO_PRESSIONAR_SELECAO);
+            timerPressionar = setTimeout(() => { modoSelecaoLotes = true; alternarSelecaoLote(divLote, idLote); }, TEMPO_PRESSIONAR_SELECAO);
         };
-
-        const aoCancelarToque = () => {
-            if (timerPressionar) {
-                clearTimeout(timerPressionar);
-                timerPressionar = null;
-            }
-        };
-
+        const aoCancelarToque = () => { if (timerPressionar) { clearTimeout(timerPressionar); timerPressionar = null; } };
         const aoMoverToque = (e) => {
             if (!timerPressionar) return;
-            const moveX = Math.abs(e.touches[0].clientX - startX);
-            const moveY = Math.abs(e.touches[0].clientY - startY);
-
-            if (moveX > 8 || moveY > 8) {
-                aoCancelarToque();
-            }
+            if (Math.abs(e.touches[0].clientX - startX) > 8 || Math.abs(e.touches[0].clientY - startY) > 8) aoCancelarToque();
         };
 
         bannerDiv.addEventListener('mousedown', aoIniciarToque);
         bannerDiv.addEventListener('mouseup', aoCancelarToque);
         bannerDiv.addEventListener('mouseleave', aoCancelarToque);
-
         bannerDiv.addEventListener('touchstart', aoIniciarToque, { passive: true });
         bannerDiv.addEventListener('touchend', aoCancelarToque);
         bannerDiv.addEventListener('touchmove', aoMoverToque, { passive: true });
@@ -1706,9 +1690,8 @@
             divLote.classList.add('card-lote-selecionado');
         }
 
-        if (lotesSelecionados.size === 0) {
-            limparSelecao();
-        } else {
+        if (lotesSelecionados.size === 0) limparSelecao();
+        else {
             const painel = document.getElementById('painelSelecao');
             document.getElementById('txtQtdSelecionados').innerText = `${lotesSelecionados.size} lote(s)`;
             document.getElementById('btnJuntarSel').style.display = lotesSelecionados.size > 1 ? 'inline-block' : 'none';
@@ -1725,12 +1708,8 @@
             itensSelecionados.set(idUnico, { elementoTr, texto: textoCopiar, idLote, idItem });
             elementoTr.classList.add('item-selecionado');
         }
-
-        if (itensSelecionados.size === 0) {
-            limparSelecao();
-        } else {
-            atualizarPainelSelecao();
-        }
+        if (itensSelecionados.size === 0) limparSelecao();
+        else atualizarPainelSelecao();
     }
 
     function atualizarPainelSelecao() {
@@ -1742,14 +1721,10 @@
     }
 
     function limparSelecao() {
-        itensSelecionados.forEach((val) => {
-            if (val.elementoTr) val.elementoTr.classList.remove('item-selecionado');
-        });
+        itensSelecionados.forEach((val) => { if (val.elementoTr) val.elementoTr.classList.remove('item-selecionado'); });
         itensSelecionados.clear();
-
         document.querySelectorAll('.card-lote-selecionado').forEach(el => el.classList.remove('card-lote-selecionado'));
         lotesSelecionados.clear();
-
         modoSelecaoAtivo = false;
         modoSelecaoLotes = false;
         document.getElementById('painelSelecao').style.display = 'none';
@@ -1759,69 +1734,52 @@
 
     function juntarLotesSelecionados() {
         if (lotesSelecionados.size < 2) return;
-
         const tipo = appState.abaAtiva;
         mostrarModal('Juntar Lotes', `Deseja unificar os ${lotesSelecionados.size} lotes selecionados em um único novo lote?`, () => {
             let novosItens = [];
-            let lotesParaRemover = [];
-
             appState[tipo].lotes.forEach(lote => {
-                if (lotesSelecionados.has(lote.idLote)) {
-                    novosItens.push(...lote.itens);
-                    lotesParaRemover.push(lote.idLote);
-                }
+                if (lotesSelecionados.has(lote.idLote)) { novosItens.push(...lote.itens); }
             });
+            novosItens.forEach((item, index) => { item.idItem = index + 1; });
 
-            novosItens.forEach((item, index) => {
-                item.idItem = index + 1;
-            });
-
-            const nomeNovoLote = `Lote Unificado (${lotesSelecionados.size}) • ${gerarDataHoraFormatada()}`;
             const novoLote = {
                 idLote: Date.now(),
-                nome: nomeNovoLote,
+                nome: `Lote Unificado (${lotesSelecionados.size}) • ${gerarDataHoraFormatada()}`,
                 banner: BANNERS[appState[tipo].lotes.length % BANNERS.length],
                 itens: novosItens
             };
 
             appState[tipo].lotes = appState[tipo].lotes.filter(l => !lotesSelecionados.has(l.idLote));
             appState[tipo].lotes.unshift(novoLote);
-
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
 
             renderizarTodosLotes(tipo);
-            mostrarStatus('🧩 Lotes unificados com sucesso!');
+            mostrarStatus('🧩 Lotes unificados!');
             limparSelecao();
         });
     }
 
     function arquivarLotesSelecionados() {
         if (lotesSelecionados.size === 0) return;
-
         const tipo = appState.abaAtiva;
         mostrarModal('Arquivar Lotes', `Deseja arquivar os ${lotesSelecionados.size} lotes selecionados?`, () => {
-            lotesSelecionados.forEach(idLote => {
-                arquivarLote(tipo, idLote);
-            });
+            lotesSelecionados.forEach(idLote => arquivarLote(tipo, idLote));
             limparSelecao();
         });
     }
 
     function copiarLotesSelecionados() {
         if (lotesSelecionados.size === 0) return;
-
         const tipo = appState.abaAtiva;
-        let textoCompleto = '';
-        let qtdItens = 0;
-        const senhaPadrao = appState.emails.senhaPadrao;
-
+        let textoCompleto = '', qtdItens = 0;
+        
         appState[tipo].lotes.forEach(lote => {
             if (lotesSelecionados.has(lote.idLote)) {
                 lote.itens.forEach(item => {
                     let linha = item.textoCompleto || item.principal;
-                    if (tipo === 'emails' && senhaPadrao) {
+                    if (tipo === 'emails' && appState.emails.senhaPadrao) {
                         let delimitador = linha.includes(':') ? ':' : (linha.includes('|') ? '|' : ':');
-                        linha = `${item.principal}${delimitador}${senhaPadrao}`;
+                        linha = `${item.principal}${delimitador}${appState.emails.senhaPadrao}`;
                     }
                     textoCompleto += linha + '\n';
                     qtdItens++;
@@ -1830,24 +1788,20 @@
         });
 
         copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
-            mostrarStatus(`✅ ${qtdItens} itens dos lotes copiados!`);
+            mostrarStatus(`✅ ${qtdItens} itens copiados!`);
             limparSelecao();
         }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
     }
 
     function apagarLotesSelecionados() {
         if (lotesSelecionados.size === 0) return;
-
         const tipo = appState.abaAtiva;
-        mostrarModal('Mover para Lixeira', `Deseja mover os ${lotesSelecionados.size} lotes selecionados para a Lixeira?`, () => {
+        mostrarModal('Mover para Lixeira', `Deseja mover os ${lotesSelecionados.size} lotes para a Lixeira?`, () => {
             appState[tipo].lotes.forEach(l => {
-                if (lotesSelecionados.has(l.idLote)) {
-                    l.itens.forEach(i => moverParaLixeira(tipo, i, l.nome));
-                }
+                if (lotesSelecionados.has(l.idLote)) l.itens.forEach(i => moverParaLixeira(tipo, i, l.nome));
             });
-
             appState[tipo].lotes = appState[tipo].lotes.filter(l => !lotesSelecionados.has(l.idLote));
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
             renderizarTodosLotes(tipo);
             mostrarStatus('Lotes movidos para a lixeira!');
             limparSelecao();
@@ -1856,63 +1810,41 @@
 
     function copiarItensSelecionados() {
         if (itensSelecionados.size === 0) return;
-
         const tipo = appState.abaAtiva;
-        let textoParaClipboard = '';
-        let idsArray = [];
+        let textoParaClipboard = '', idsArray = [];
 
         itensSelecionados.forEach((val, idUnico) => {
             textoParaClipboard += val.texto + '\n';
             idsArray.push(idUnico);
-            if (!appState[tipo].usados.includes(idUnico)) {
-                appState[tipo].usados.push(idUnico);
-            }
+            if (!appState[tipo].usados.includes(idUnico)) appState[tipo].usados.push(idUnico);
         });
 
         copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
-            localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
-
+            BancoDB.set(CHAVES[tipo].usados, appState[tipo].usados);
             if (idsArray.length > 0) {
-                const ultimoId = idsArray[idsArray.length - 1];
-                appState[tipo].ultimo = ultimoId;
-                localStorage.setItem(CHAVES[tipo].ultimo, ultimoId);
+                appState[tipo].ultimo = idsArray[idsArray.length - 1];
+                BancoDB.set(CHAVES[tipo].ultimo, appState[tipo].ultimo);
             }
-
             document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(b => b.classList.remove('ultimo-copiado'));
-
             idsArray.forEach(id => {
                 const tr = document.getElementById(`tr_${id}`);
                 if (tr) {
                     const btnBloco = tr.querySelector('.btn-copiar');
                     const btnCpf = tr.querySelector('.btn-cpf');
-                    
-                    if (btnBloco) {
-                        btnBloco.innerText = 'Usado!';
-                        btnBloco.classList.add('usado');
-                        if (id === appState[tipo].ultimo) btnBloco.classList.add('ultimo-copiado');
-                    }
-                    if (btnCpf) {
-                        btnCpf.innerText = 'CPF!';
-                        btnCpf.classList.add('usado');
-                        if (id === appState[tipo].ultimo) btnCpf.classList.add('ultimo-copiado');
-                    }
+                    if (btnBloco) { btnBloco.innerText = 'Usado!'; btnBloco.classList.add('usado'); if (id === appState[tipo].ultimo) btnBloco.classList.add('ultimo-copiado'); }
+                    if (btnCpf) { btnCpf.innerText = 'CPF!'; btnCpf.classList.add('usado'); if (id === appState[tipo].ultimo) btnCpf.classList.add('ultimo-copiado'); }
                 }
             });
-
             mostrarStatus(`✅ ${idsArray.length} itens copiados!`);
             atualizarPainelSelecao();
-            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) {
-                filtrarItens(tipo);
-            }
-        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) filtrarItens(tipo);
+        });
     }
 
     function apagarItensSelecionados() {
         if (itensSelecionados.size === 0) return;
-
         mostrarModal('Mover para Lixeira', `Deseja mover os ${itensSelecionados.size} itens selecionados para a Lixeira?`, () => {
             const tipo = appState.abaAtiva;
-
             itensSelecionados.forEach((val, idUnico) => {
                 const lote = appState[tipo].lotes.find(l => l.idLote === val.idLote);
                 if (lote) {
@@ -1922,11 +1854,9 @@
                 }
                 appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
             });
-
             reordenarEAtualizarLotes(tipo);
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-            localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
-
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
+            BancoDB.set(CHAVES[tipo].usados, appState[tipo].usados);
             renderizarTodosLotes(tipo);
             mostrarStatus('Itens movidos para a lixeira!');
             limparSelecao();
@@ -1935,30 +1865,17 @@
 
     function extrairBlocosPessoas(texto) {
         const itens = [];
-        let contador = 1;
-
-        const linhas = texto.split(/\r?\n/);
-        let blocos = [];
-        let blocoAtual = [];
-
-        linhas.forEach((linha) => {
+        let contador = 1, blocos = [], blocoAtual = [];
+        texto.split(/\r?\n/).forEach((linha) => {
             const l = linha.trim();
             if (!l) return;
-
-            if (/(?:^•?\s*CPF|^PESSOA)/i.test(l) && blocoAtual.length > 0) {
-                blocos.push(blocoAtual.join('\n'));
-                blocoAtual = [];
-            }
+            if (/(?:^•?\s*CPF|^PESSOA)/i.test(l) && blocoAtual.length > 0) { blocos.push(blocoAtual.join('\n')); blocoAtual = []; }
             blocoAtual.push(l);
         });
-
-        if (blocoAtual.length > 0) {
-            blocos.push(blocoAtual.join('\n'));
-        }
+        if (blocoAtual.length > 0) blocos.push(blocoAtual.join('\n'));
 
         blocos.forEach((textoBloco) => {
             let cpf = '', nome = '', nascimento = '', sexo = '';
-
             const mCpf = textoBloco.match(/(?:CPF|DOC|DOCUMENTO)[:\s]*([0-9\.\-]+)/i);
             const mNome = textoBloco.match(/(?:NOME|NOME COMPLETO)[:\s]*([^\n•|]+)/i);
             const mNasc = textoBloco.match(/(?:NASCIMENTO|NASC|DATA NASC)[:\s]*([0-9\/]+)/i);
@@ -1971,39 +1888,25 @@
 
             if (cpf || nome) {
                 itens.push({
-                    idItem: contador++,
-                    principal: nome || 'PESSOA ' + contador,
+                    idItem: contador++, principal: nome || 'PESSOA ' + contador,
                     secundario: cpf ? cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : 'S/ CPF',
                     terciario: (nascimento ? nascimento : '-') + (sexo ? ` (${sexo})` : ''),
-                    textoCompleto: textoBloco,
-                    cpfLimpo: cpf
+                    textoCompleto: textoBloco, cpfLimpo: cpf
                 });
             }
         });
-
         return itens;
     }
 
     function extrairCartoesDeTexto(texto) {
         const resultados = [];
-        const regexCartaoEspecial = /(\b\d{15,16}\b)\s*[|:\s/]\s*(\d{1,2})\s*[|:\s/]\s*(\d{2,4})\s*[|:\s/]\s*(\d{3,4})/g;
-
+        const regex = /(\b\d{15,16}\b)\s*[|:\s/]\s*(\d{1,2})\s*[|:\s/]\s*(\d{2,4})\s*[|:\s/]\s*(\d{3,4})/g;
         let match;
-        while ((match = regexCartaoEspecial.exec(texto)) !== null) {
-            const numero = match[1];
-            let mes = match[2].padStart(2, '0');
+        while ((match = regex.exec(texto)) !== null) {
             let ano = match[3];
             if (ano.length === 2) ano = '20' + ano;
-            const cvv = match[4];
-
-            resultados.push({
-                numero: numero,
-                mesAno: `${mes}/${ano}`,
-                cvv: cvv,
-                original: `${numero}|${mes}|${ano}|${cvv}`
-            });
+            resultados.push({ numero: match[1], mesAno: `${match[2].padStart(2, '0')}/${ano}`, cvv: match[4], original: `${match[1]}|${match[2].padStart(2, '0')}|${ano}|${match[4]}` });
         }
-
         return resultados;
     }
 
@@ -2012,20 +1915,17 @@
         const campo = document.getElementById(campoId);
         let texto = campo.value.trim();
 
-        if (!texto) {
-            alert('Cole uma lista ou selecione um arquivo antes de importar.');
-            return;
-        }
+        if (!texto) { alert('Cole uma lista ou selecione um arquivo.'); return; }
 
         if (texto.startsWith('{') || texto.startsWith('[')) {
             try {
                 const parsedJson = JSON.parse(texto);
                 if (parsedJson.lotes && Array.isArray(parsedJson.lotes)) {
-                    parsedJson.lotes.forEach(loteImportado => appState[tipo].lotes.unshift(loteImportado));
+                    parsedJson.lotes.forEach(l => appState[tipo].lotes.unshift(l));
                     reordenarEAtualizarLotes(tipo);
                     renderizarTodosLotes(tipo);
                     campo.value = '';
-                    mostrarStatus('Lotes importados com sucesso!');
+                    mostrarStatus('Lotes importados!');
                     return;
                 }
             } catch (err) {}
@@ -2040,180 +1940,104 @@
             });
         });
 
-        let itens = [];
-        let ignoradosRepetidos = 0;
-        let statusImportacao = 'virgem';
-
-        if (tipo === 'emails') {
-            const selectEl = document.getElementById('selectStatusImport');
-            if (selectEl) statusImportacao = selectEl.value;
-        }
+        let itens = [], ignoradosRepetidos = 0, statusImportacao = 'virgem';
+        if (tipo === 'emails') statusImportacao = document.getElementById('selectStatusImport').value;
 
         if (tipo === 'cards') {
-            const cartoesEncontrados = extrairCartoesDeTexto(texto);
+            const cartoes = extrairCartoesDeTexto(texto);
             let contador = 1;
-
-            cartoesEncontrados.forEach(c => {
-                if (existentes.has(c.numero)) {
-                    ignoradosRepetidos++;
-                    return;
-                }
+            cartoes.forEach(c => {
+                if (existentes.has(c.numero)) { ignoradosRepetidos++; return; }
                 existentes.add(c.numero);
-
-                itens.push({
-                    idItem: contador++,
-                    principal: c.numero,
-                    secundario: c.mesAno,
-                    terciario: c.cvv,
-                    textoCompleto: c.original,
-                    statusCard: 'pendente'
-                });
+                itens.push({ idItem: contador++, principal: c.numero, secundario: c.mesAno, terciario: c.cvv, textoCompleto: c.original, statusCard: 'pendente' });
             });
         } else if (tipo === 'dados') {
-            const todosExtraidos = extrairBlocosPessoas(texto);
-            todosExtraidos.forEach(item => {
-                if (item.cpfLimpo && existentes.has(item.cpfLimpo)) {
-                    ignoradosRepetidos++;
-                } else {
-                    if (item.cpfLimpo) existentes.add(item.cpfLimpo);
-                    itens.push(item);
-                }
+            const blocos = extrairBlocosPessoas(texto);
+            blocos.forEach(item => {
+                if (item.cpfLimpo && existentes.has(item.cpfLimpo)) ignoradosRepetidos++;
+                else { if (item.cpfLimpo) existentes.add(item.cpfLimpo); itens.push(item); }
             });
         } else {
-            const linhas = texto.split(/\r?\n/);
             let contador = 1;
-
-            linhas.forEach(linha => {
+            texto.split(/\r?\n/).forEach(linha => {
                 let l = linha.trim().replace(/^["\[{\s]+|[\]}"\s]+$/g, '');
                 if (!l) return;
-
-                let delimitador = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
-                const partes = l.split(delimitador);
-                const email = partes[0] ? partes[0].trim() : '';
+                let del = l.includes(':') ? ':' : (l.includes('|') ? '|' : ' ');
+                const p = l.split(del);
+                const email = p[0] ? p[0].trim() : '';
                 if (!email) return;
-
-                const emailChave = email.toLowerCase();
-                if (existentes.has(emailChave)) {
-                    ignoradosRepetidos++;
-                    return;
-                }
-                existentes.add(emailChave);
-
-                itens.push({
-                    idItem: contador++,
-                    principal: email,
-                    secundario: partes[1] ? partes[1].trim() : '-',
-                    terciario: '',
-                    textoCompleto: l,
-                    status: statusImportacao
-                });
+                const eChave = email.toLowerCase();
+                if (existentes.has(eChave)) { ignoradosRepetidos++; return; }
+                existentes.add(eChave);
+                itens.push({ idItem: contador++, principal: email, secundario: p[1] ? p[1].trim() : '-', terciario: '', textoCompleto: l, status: statusImportacao });
             });
         }
 
         if (itens.length === 0) {
-            if (ignoradosRepetidos > 0) {
-                alert(`⚠️ Todos os ${ignoradosRepetidos} itens da lista já existem nas suas listas!`);
-            } else {
-                alert('Nenhum cartão ou dado válido foi identificado.');
-            }
+            if (ignoradosRepetidos > 0) alert(`⚠️ ${ignoradosRepetidos} itens já existem nas suas listas!`);
+            else alert('Nenhum dado válido identificado.');
             return;
         }
 
-        const novoLote = {
-            idLote: Date.now(),
-            nome: `${tipo === 'cards' ? 'Cards' : (tipo === 'emails' ? 'Logins' : 'Pessoas')} • ${gerarDataHoraFormatada()}`,
-            banner: BANNERS[appState[tipo].lotes.length % BANNERS.length],
-            itens: itens
-        };
-
+        const novoLote = { idLote: Date.now(), nome: `${tipo === 'cards' ? 'Cards' : (tipo === 'emails' ? 'Logins' : 'Pessoas')} • ${gerarDataHoraFormatada()}`, banner: BANNERS[appState[tipo].lotes.length % BANNERS.length], itens: itens };
         appState[tipo].lotes.unshift(novoLote);
         reordenarEAtualizarLotes(tipo);
-        localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
 
         if (tipo === 'emails') {
-            itens.forEach(item => {
-                const emailChave = item.principal.toLowerCase();
-                appState.emails.status[emailChave] = statusImportacao;
-            });
-            localStorage.setItem(CHAVES[tipo].status, JSON.stringify(appState.emails.status));
+            itens.forEach(i => { appState.emails.status[i.principal.toLowerCase()] = statusImportacao; });
+            BancoDB.set(CHAVES[tipo].status, appState.emails.status);
         }
 
         campo.value = '';
         renderizarTodosLotes(tipo);
-
-        let msg = `Importado com sucesso (${itens.length})!`;
-        if (ignoradosRepetidos > 0) msg += ` ⚠️ ${ignoradosRepetidos} duplicados ignorados.`;
-        mostrarStatus(msg);
+        mostrarStatus(`Importado com sucesso (${itens.length})!${ignoradosRepetidos > 0 ? ` ⚠️ ${ignoradosRepetidos} duplicados ignorados.` : ''}`);
     }
 
     function marcarCartoesLive() {
         const campo = document.getElementById('entradaDadosCards');
         const texto = campo.value.trim();
+        if (!texto) { alert('Cole a lista de cartões LIVE para marcar.'); return; }
 
-        if (!texto) {
-            alert('Cole a lista de cartões LIVE para marcar.');
-            return;
-        }
+        const achados = new Set(texto.match(/\b\d{15,16}\b/g) || []);
+        if (achados.size === 0) { alert('⚠️ Nenhum cartão com 15/16 dígitos encontrado.'); return; }
 
-        const cartoesLiveEncontrados = new Set();
-        const numerosExtraidos = texto.match(/\b\d{15,16}\b/g) || [];
-
-        numerosExtraidos.forEach(num => cartoesLiveEncontrados.add(num));
-
-        if (cartoesLiveEncontrados.size === 0) {
-            alert('⚠️ Nenhum número de cartão com 15 ou 16 dígitos foi encontrado no texto.');
-            return;
-        }
-
-        let marcadosComSucesso = 0;
-
-        appState.cards.lotes.forEach(lote => {
-            lote.itens.forEach(item => {
-                const numCardLimpo = item.principal ? item.principal.replace(/\D/g, '') : '';
-                if (numCardLimpo && cartoesLiveEncontrados.has(numCardLimpo)) {
-                    if (item.statusCard !== 'live') {
-                        item.statusCard = 'live';
-                        marcadosComSucesso++;
-                    }
+        let marcados = 0;
+        appState.cards.lotes.forEach(l => {
+            l.itens.forEach(i => {
+                const num = i.principal ? i.principal.replace(/\D/g, '') : '';
+                if (num && achados.has(num) && i.statusCard !== 'live') {
+                    i.statusCard = 'live'; marcados++;
                 }
             });
         });
 
-        if (marcadosComSucesso > 0) {
-            localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(appState.cards.lotes));
+        if (marcados > 0) {
+            BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes);
             renderizarTodosLotes('cards');
             campo.value = '';
-            alert(`🟢 Sucesso! ${marcadosComSucesso} cartão(ões) foram marcados como LIVE!`);
+            alert(`🟢 Sucesso! ${marcados} cartão(ões) marcados como LIVE!`);
         } else {
-            alert('⚠️ Nenhum dos cartões colados foi encontrado nas listas importadas anteriores.');
+            alert('⚠️ Nenhum cartão da lista estava no sistema.');
         }
     }
 
     function alternarLote(tipo, idLote) {
         const index = appState[tipo].abertos.indexOf(idLote);
-        if (index > -1) {
-            appState[tipo].abertos.splice(index, 1);
-        } else {
-            appState[tipo].abertos.push(idLote);
-        }
-        
-        localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
+        if (index > -1) appState[tipo].abertos.splice(index, 1);
+        else appState[tipo].abertos.push(idLote);
+        BancoDB.set(CHAVES[tipo].abertos, appState[tipo].abertos);
         const elemento = document.getElementById(`lote_${tipo}_${idLote}`);
-        if (elemento) {
-            elemento.classList.toggle('aberto');
-        }
+        if (elemento) elemento.classList.toggle('aberto');
     }
 
     function excluirLote(tipo, idLote) {
-        mostrarModal('Mover para Lixeira', 'Deseja mover esta extração inteira para a Lixeira?', () => {
+        mostrarModal('Mover para Lixeira', 'Deseja mover este lote para a Lixeira?', () => {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
-            if (lote) {
-                lote.itens.forEach(item => moverParaLixeira(tipo, item, lote.nome));
-            }
+            if (lote) lote.itens.forEach(item => moverParaLixeira(tipo, item, lote.nome));
             appState[tipo].lotes = appState[tipo].lotes.filter(l => l.idLote !== idLote);
             appState[tipo].abertos = appState[tipo].abertos.filter(id => id !== idLote);
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-            localStorage.setItem(CHAVES[tipo].abertos, JSON.stringify(appState[tipo].abertos));
+            BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
+            BancoDB.set(CHAVES[tipo].abertos, appState[tipo].abertos);
             renderizarTodosLotes(tipo);
             mostrarStatus('Lote movido para a lixeira!');
         });
@@ -2222,93 +2046,61 @@
     function copiarTodosCartoesLote(idLote) {
         const lote = appState.cards.lotes.find(l => l.idLote === idLote);
         if (!lote || !lote.itens || lote.itens.length === 0) return;
-
-        let textoCompleto = '';
-        let quantidadeCopiada = 0;
-
-        lote.itens.forEach(item => {
-            const idUnico = `item_cards_${lote.idLote}_${item.idItem}`;
-            const trElemento = document.getElementById(`tr_${idUnico}`);
-
-            if (trElemento && !trElemento.classList.contains('linha-oculta')) {
-                textoCompleto += (item.textoCompleto || item.principal) + '\n';
-                quantidadeCopiada++;
-                if (!appState.cards.usados.includes(idUnico)) {
-                    appState.cards.usados.push(idUnico);
-                }
+        let txt = '', cop = 0;
+        lote.itens.forEach(i => {
+            const idU = `item_cards_${lote.idLote}_${i.idItem}`;
+            const tr = document.getElementById(`tr_${idU}`);
+            if (tr && !tr.classList.contains('linha-oculta')) {
+                txt += (i.textoCompleto || i.principal) + '\n';
+                cop++;
+                if (!appState.cards.usados.includes(idU)) appState.cards.usados.push(idU);
             }
         });
-
-        if (quantidadeCopiada === 0) {
-            alert('⚠️ Nenhum cartão visível para copiar.');
-            return;
-        }
-
-        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
-            localStorage.setItem(CHAVES.cards.usados, JSON.stringify(appState.cards.usados));
+        if (cop === 0) return;
+        copiarParaAreaTransferencia(txt.trim()).then(() => {
+            BancoDB.set(CHAVES.cards.usados, appState.cards.usados);
             renderizarTodosLotes('cards');
-            mostrarStatus(`✅ ${quantidadeCopiada} cartões visíveis copiados!`);
-        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+            mostrarStatus(`✅ ${cop} cartões copiados!`);
+        });
     }
 
     function copiarTodosEmailsLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote || !lote.itens || lote.itens.length === 0) return;
-
-        let textoCompleto = '';
-        let quantidadeCopiada = 0;
-
-        const senhaPadrao = appState.emails.senhaPadrao;
-
-        lote.itens.forEach(item => {
-            const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const trElemento = document.getElementById(`tr_${idUnico}`);
-
-            if (trElemento && !trElemento.classList.contains('linha-oculta')) {
-                let linha = item.textoCompleto || item.principal;
-                if (senhaPadrao) {
-                    let delimitador = linha.includes(':') ? ':' : (linha.includes('|') ? '|' : ':');
-                    linha = `${item.principal}${delimitador}${senhaPadrao}`;
+        let txt = '', cop = 0;
+        lote.itens.forEach(i => {
+            const idU = `item_emails_${lote.idLote}_${i.idItem}`;
+            const tr = document.getElementById(`tr_${idU}`);
+            if (tr && !tr.classList.contains('linha-oculta')) {
+                let linha = i.textoCompleto || i.principal;
+                if (appState.emails.senhaPadrao) {
+                    let del = linha.includes(':') ? ':' : (linha.includes('|') ? '|' : ':');
+                    linha = `${i.principal}${del}${appState.emails.senhaPadrao}`;
                 }
-
-                textoCompleto += linha + '\n';
-                quantidadeCopiada++;
-                if (!appState.emails.usados.includes(idUnico)) {
-                    appState.emails.usados.push(idUnico);
-                }
+                txt += linha + '\n';
+                cop++;
+                if (!appState.emails.usados.includes(idU)) appState.emails.usados.push(idU);
             }
         });
-
-        if (quantidadeCopiada === 0) {
-            alert('⚠️ Nenhum item visível para copiar.');
-            return;
-        }
-
-        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
-            localStorage.setItem(CHAVES.emails.usados, JSON.stringify(appState.emails.usados));
+        if (cop === 0) return;
+        copiarParaAreaTransferencia(txt.trim()).then(() => {
+            BancoDB.set(CHAVES.emails.usados, appState.emails.usados);
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${quantidadeCopiada} conta(s) copiada(s)!`);
-        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+            mostrarStatus(`✅ ${cop} contas copiadas!`);
+        });
     }
 
     function excluirItem(tipo, idLote, idItem) {
         mostrarModal('Mover para Lixeira', 'Deseja mover este item para a Lixeira?', () => {
             const lote = appState[tipo].lotes.find(l => l.idLote === idLote);
             if (lote) {
-                const itemRemovido = lote.itens.find(i => i.idItem === idItem);
-                if (itemRemovido) moverParaLixeira(tipo, itemRemovido, lote.nome);
-
+                const item = lote.itens.find(i => i.idItem === idItem);
+                if (item) moverParaLixeira(tipo, item, lote.nome);
                 lote.itens = lote.itens.filter(i => i.idItem !== idItem);
                 reordenarEAtualizarLotes(tipo);
-
-                const idUnico = `item_${tipo}_${idLote}_${idItem}`;
-                appState[tipo].usados = appState[tipo].usados.filter(id => id !== idUnico);
-
-                localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-                localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
-                
+                appState[tipo].usados = appState[tipo].usados.filter(id => id !== `item_${tipo}_${idLote}_${idItem}`);
+                BancoDB.set(CHAVES[tipo].usados, appState[tipo].usados);
                 renderizarTodosLotes(tipo);
-                mostrarStatus('Item movido para a lixeira!');
             }
         });
     }
@@ -2317,505 +2109,221 @@
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (!lote) return;
 
-        const emailsJaEmAssinadas = new Set();
+        const assinadasExistentes = new Set();
         appState.emails.lotes.forEach(l => {
-            if (l.nome && l.nome.startsWith('ASSINADAS')) {
-                l.itens.forEach(i => {
-                    if (i.principal) emailsJaEmAssinadas.add(i.principal.toLowerCase().trim());
-                });
-            }
+            if (l.nome && l.nome.startsWith('ASSINADAS')) l.itens.forEach(i => { if (i.principal) assinadasExistentes.add(i.principal.toLowerCase().trim()); });
         });
 
-        const statusPermitidos = ['padrao', 'premium', 'assinada'];
-        const itensParaMover = [];
-        const itensManter = [];
-
+        const itensMover = [], itensManter = [];
         lote.itens.forEach(item => {
             const emailChave = item.principal.toLowerCase().trim();
             const statusAtual = appState.emails.status[emailChave] || item.status || '';
-
-            if (statusPermitidos.includes(statusAtual)) {
-                if (!emailsJaEmAssinadas.has(emailChave)) {
-                    itensParaMover.push({
-                        ...item,
-                        statusAtual: statusAtual
-                    });
-                    emailsJaEmAssinadas.add(emailChave);
-                }
-            } else {
-                itensManter.push(item);
-            }
+            if (['padrao', 'premium', 'assinada'].includes(statusAtual)) {
+                if (!assinadasExistentes.has(emailChave)) { itensMover.push({...item, statusAtual}); assinadasExistentes.add(emailChave); }
+            } else { itensManter.push(item); }
         });
 
-        if (itensParaMover.length === 0) {
-            const existiaComStatus = lote.itens.some(item => {
-                const emailChave = item.principal.toLowerCase().trim();
-                const statusAtual = appState.emails.status[emailChave] || item.status || '';
-                return statusPermitidos.includes(statusAtual);
-            });
+        if (itensMover.length === 0) { alert('⚠️ Nenhuma conta com status Premium/Padrão/Assinada nova encontrada.'); return; }
 
-            if (existiaComStatus) {
-                alert('⚠️ As contas deste lote já foram movidas anteriormente para uma pasta ASSINADAS.');
-            } else {
-                alert('⚠️ Nenhuma conta com status "Padrão", "Premium" ou "Assinada" foi encontrada neste lote.');
-            }
-            return;
-        }
-
-        let textoParaClipboard = '';
-        itensParaMover.forEach(item => {
-            textoParaClipboard += item.textoCompleto + '\n';
-        });
-
-        copiarParaAreaTransferencia(textoParaClipboard.trim()).then(() => {
+        let txt = '';
+        itensMover.forEach(i => txt += i.textoCompleto + '\n');
+        copiarParaAreaTransferencia(txt.trim()).then(() => {
             lote.itens = itensManter;
-
-            const itensNovosLote = itensParaMover.map((item, idx) => ({
-                idItem: idx + 1,
-                principal: item.principal,
-                secundario: item.secundario,
-                terciario: '',
-                textoCompleto: item.textoCompleto,
-                status: item.statusAtual
-            }));
-
-            itensParaMover.forEach(item => {
-                const emailChave = item.principal.toLowerCase().trim();
-                appState.emails.status[emailChave] = item.statusAtual;
-            });
-
-            const novoLoteAssinadas = {
-                idLote: Date.now(),
-                nome: `ASSINADAS • ${gerarDataHoraFormatada()}`,
-                banner: BANNERS[appState.emails.lotes.length % BANNERS.length],
-                itens: itensNovosLote
-            };
-
-            appState.emails.lotes.unshift(novoLoteAssinadas);
-
+            const novos = itensMover.map((item, idx) => ({ idItem: idx + 1, principal: item.principal, secundario: item.secundario, terciario: '', textoCompleto: item.textoCompleto, status: item.statusAtual }));
+            appState.emails.lotes.unshift({ idLote: Date.now(), nome: `ASSINADAS • ${gerarDataHoraFormatada()}`, banner: BANNERS[appState.emails.lotes.length % BANNERS.length], itens: novos });
             reordenarEAtualizarLotes('emails');
-            localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
-            localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
-
             renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${itensParaMover.length} conta(s) movida(s) para a pasta ASSINADAS!`);
-        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+            mostrarStatus(`✅ ${itensMover.length} contas movidas para ASSINADAS!`);
+        });
     }
 
     function alternarFiltroCards() {
         appState.cards.ocultar = !appState.cards.ocultar;
-        localStorage.setItem(CHAVES.cards.ocultar, JSON.stringify(appState.cards.ocultar));
-        atualizarBotaoFiltroVisual('cards');
-        filtrarItens('cards');
+        BancoDB.set(CHAVES.cards.ocultar, appState.cards.ocultar);
+        atualizarBotaoFiltroVisual('cards'); filtrarItens('cards');
     }
-
     function alternarFiltroDados() {
         appState.dados.ocultar = !appState.dados.ocultar;
-        localStorage.setItem(CHAVES.dados.ocultar, JSON.stringify(appState.dados.ocultar));
-        atualizarBotaoFiltroVisual('dados');
-        filtrarItens('dados');
+        BancoDB.set(CHAVES.dados.ocultar, appState.dados.ocultar);
+        atualizarBotaoFiltroVisual('dados'); filtrarItens('dados');
     }
-
     function atualizarBotaoFiltroVisual(tipo) {
-        if (tipo === 'cards') {
-            const btn = document.getElementById('btnOcultarUsadosCards');
-            btn.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
-            btn.classList.toggle('ativo', appState.cards.ocultar);
-        } else if (tipo === 'dados') {
-            const btn = document.getElementById('btnOcultarUsadosDados');
-            btn.innerText = appState.dados.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
-            btn.classList.toggle('ativo', appState.dados.ocultar);
-        } else if (tipo === 'emails') {
-            const sel = document.getElementById('filtroStatusEmails');
-            if (sel) sel.value = appState.emails.filtroAtual;
-        }
+        if (tipo === 'cards') { const b = document.getElementById('btnOcultarUsadosCards'); b.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados'; b.classList.toggle('ativo', appState.cards.ocultar); }
+        else if (tipo === 'dados') { const b = document.getElementById('btnOcultarUsadosDados'); b.innerText = appState.dados.ocultar ? 'Mostrar Usados' : 'Ocultar Usados'; b.classList.toggle('ativo', appState.dados.ocultar); }
+        else if (tipo === 'emails') { const s = document.getElementById('filtroStatusEmails'); if (s) s.value = appState.emails.filtroAtual; }
     }
 
     function mudarStatusItemEmail(idLote, idItem, emailText, novoStatus) {
         const emailChave = emailText.toLowerCase();
-        
         appState.emails.status[emailChave] = novoStatus;
-        localStorage.setItem(CHAVES.emails.status, JSON.stringify(appState.emails.status));
-
+        BancoDB.set(CHAVES.emails.status, appState.emails.status);
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
-        if (lote) {
-            const item = lote.itens.find(i => i.idItem === idItem);
-            if (item) {
-                item.status = novoStatus;
-                localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(appState.emails.lotes));
-            }
-        }
-
+        if (lote) { const item = lote.itens.find(i => i.idItem === idItem); if (item) { item.status = novoStatus; BancoDB.set(CHAVES.emails.lotes, appState.emails.lotes); } }
         filtrarItens('emails');
     }
 
     function mudarStatusItemCard(idLote, idItem, novoStatus) {
         const lote = appState.cards.lotes.find(l => l.idLote === idLote);
-        if (lote) {
-            const item = lote.itens.find(i => i.idItem === idItem);
-            if (item) {
-                item.statusCard = novoStatus;
-                localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(appState.cards.lotes));
-            }
-        }
+        if (lote) { const item = lote.itens.find(i => i.idItem === idItem); if (item) { item.statusCard = novoStatus; BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes); } }
     }
 
     function filtrarItens(tipo) {
-        const campoMap = { 'cards': 'campoPesquisaCards', 'emails': 'campoPesquisaEmails', 'dados': 'campoPesquisaDados' };
-        const campoId = campoMap[tipo];
-        const textoEntrada = document.getElementById(campoId).value;
+        const campo = document.getElementById({ 'cards': 'campoPesquisaCards', 'emails': 'campoPesquisaEmails', 'dados': 'campoPesquisaDados' }[tipo]);
+        const textoEntrada = campo.value;
         const ultimoId = appState[tipo].ultimo;
-
-        const blocosEntrada = textoEntrada ? textoEntrada.split(/[\r\n,;\s]+/) : [];
         const termos = [];
-
-        blocosEntrada.forEach(bloco => {
-            let b = bloco.trim().toLowerCase();
-            if (!b) return;
-
-            let termoLimpo = b;
-            if (b.includes(':')) termoLimpo = b.split(':')[0].trim();
-            else if (b.includes('|')) termoLimpo = b.split('|')[0].trim();
-
-            if (termoLimpo.length > 2) {
-                termos.push(termoLimpo);
-            }
+        (textoEntrada ? textoEntrada.split(/[\r\n,;\s]+/) : []).forEach(b => {
+            let t = b.trim().toLowerCase();
+            if (!t) return;
+            if (t.includes(':')) t = t.split(':')[0].trim();
+            else if (t.includes('|')) t = t.split('|')[0].trim();
+            if (t.length > 2) termos.push(t);
         });
 
         appState[tipo].lotes.forEach(lote => {
             const cardElemento = document.getElementById(`lote_${tipo}_${lote.idLote}`);
             if (!cardElemento) return;
-
-            let linhasVisiveisNoLote = 0;
-
+            let visiveis = 0;
             lote.itens.forEach(item => {
                 const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
                 const jaFoiUsado = appState[tipo].usados.includes(idUnico);
-                const ehOUltimoCopiado = (idUnico === ultimoId);
+                const ehOUltimo = (idUnico === ultimoId);
                 const trElemento = document.getElementById(`tr_${idUnico}`);
-
                 if (!trElemento) return;
 
-                const textoPrincipal = (item.principal || '').toLowerCase();
-                const textoSecundario = (item.secundario || '').toLowerCase();
-                const textoCpf = (item.cpfLimpo || '').toLowerCase();
-
-                let atendePesquisa = true;
+                let pesquisaOk = true;
                 if (termos.length > 0) {
-                    atendePesquisa = termos.some(termo => 
-                        textoPrincipal.includes(termo) || 
-                        textoSecundario.includes(termo) || 
-                        textoCpf.includes(termo)
-                    );
+                    const txtPrin = (item.principal || '').toLowerCase();
+                    const txtSec = (item.secundario || '').toLowerCase();
+                    const txtCpf = (item.cpfLimpo || '').toLowerCase();
+                    pesquisaOk = termos.some(termo => txtPrin.includes(termo) || txtSec.includes(termo) || txtCpf.includes(termo));
                 }
 
-                let atendeFiltroEspecial = true;
-
+                let filtroOk = true;
                 if (tipo === 'emails') {
-                    const emailChave = item.principal.toLowerCase();
-                    const statusAtual = appState.emails.status[emailChave] || item.status || '';
-                    const filtroAtual = appState.emails.filtroAtual || 'todos';
-
-                    if (filtroAtual === 'ocultar_usados') {
-                        atendeFiltroEspecial = !jaFoiUsado || ehOUltimoCopiado;
-                    } else if (filtroAtual !== 'todos') {
-                        atendeFiltroEspecial = (statusAtual === filtroAtual);
-                    }
+                    const statusAtual = appState.emails.status[item.principal.toLowerCase()] || item.status || '';
+                    if (appState.emails.filtroAtual === 'ocultar_usados') filtroOk = !jaFoiUsado || ehOUltimo;
+                    else if (appState.emails.filtroAtual !== 'todos') filtroOk = (statusAtual === appState.emails.filtroAtual);
                 } else {
-                    atendeFiltroEspecial = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimoCopiado;
+                    filtroOk = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimo;
                 }
 
-                if (atendePesquisa && atendeFiltroEspecial) {
-                    trElemento.classList.remove('linha-oculta');
-                    linhasVisiveisNoLote++;
-                } else {
-                    trElemento.classList.add('linha-oculta');
-                }
+                if (pesquisaOk && filtroOk) { trElemento.classList.remove('linha-oculta'); visiveis++; }
+                else { trElemento.classList.add('linha-oculta'); }
             });
 
             if (termos.length > 0) {
-                if (linhasVisiveisNoLote > 0) {
-                    cardElemento.style.display = 'block';
-                    cardElemento.classList.add('aberto');
-                } else {
-                    cardElemento.style.display = 'none';
-                }
+                if (visiveis > 0) { cardElemento.style.display = 'block'; cardElemento.classList.add('aberto'); }
+                else cardElemento.style.display = 'none';
             } else {
-                let deveOcultarLote = false;
-                if (tipo === 'emails' && appState.emails.filtroAtual !== 'todos') {
-                    deveOcultarLote = (linhasVisiveisNoLote === 0);
-                } else if (tipo !== 'emails' && appState[tipo].ocultar) {
-                    deveOcultarLote = (linhasVisiveisNoLote === 0);
-                }
-
-                if (deveOcultarLote) {
-                    cardElemento.style.display = 'none';
-                } else {
-                    cardElemento.style.display = 'block';
-                }
+                let ocultar = false;
+                if (tipo === 'emails' && appState.emails.filtroAtual !== 'todos') ocultar = (visiveis === 0);
+                else if (tipo !== 'emails' && appState[tipo].ocultar) ocultar = (visiveis === 0);
+                cardElemento.style.display = ocultar ? 'none' : 'block';
             }
         });
     }
 
     function obterPreviewConteudo(tipo, lote) {
         if (!lote.itens || lote.itens.length === 0) return '';
-
-        const primeiroItem = lote.itens[0];
-        if (tipo === 'cards') {
-            const numLimpo = primeiroItem.principal ? primeiroItem.principal.replace(/\D/g, '') : '';
-            if (numLimpo.length >= 6) {
-                return `BIN: ${numLimpo.substring(0, 6)}...`;
-            }
-            return numLimpo ? `CARD: ${numLimpo}` : '';
-        } else if (tipo === 'emails') {
-            return `1º: ${primeiroItem.principal}`;
-        } else if (tipo === 'dados') {
-            return `1º: ${primeiroItem.principal}`;
-        }
-        return '';
+        const prim = lote.itens[0];
+        if (tipo === 'cards') { const num = prim.principal ? prim.principal.replace(/\D/g, '') : ''; return num.length >= 6 ? `BIN: ${num.substring(0, 6)}...` : (num ? `CARD: ${num}` : ''); }
+        else return `1º: ${prim.principal}`;
     }
 
     function renderizarTodosLotes(tipo) {
-        const areaId = tipo === 'cards' ? 'areaLotesCards' : (tipo === 'emails' ? 'areaLotesEmails' : 'areaLotesDados');
-        const area = document.getElementById(areaId);
+        const area = document.getElementById({ 'cards': 'areaLotesCards', 'emails': 'areaLotesEmails', 'dados': 'areaLotesDados' }[tipo]);
         area.innerHTML = '';
-
-        if (tipo === 'emails') {
-            document.getElementById('areaLotesAssinadas').innerHTML = '';
-        }
-
-        let totalLotesAssinadas = 0;
-
+        if (tipo === 'emails') document.getElementById('areaLotesAssinadas').innerHTML = '';
+        
+        let lotesAssinadas = 0;
         appState[tipo].lotes.forEach(lote => {
             const ehAssinada = tipo === 'emails' && lote.nome.startsWith('ASSINADAS');
-            if (ehAssinada) totalLotesAssinadas++;
+            if (ehAssinada) lotesAssinadas++;
 
-            const estaAberto = appState[tipo].abertos.includes(lote.idLote);
             const divLote = document.createElement('div');
-            divLote.className = `card-lote ${estaAberto ? 'aberto' : ''}`;
+            divLote.className = `card-lote ${appState[tipo].abertos.includes(lote.idLote) ? 'aberto' : ''}`;
             divLote.id = `lote_${tipo}_${lote.idLote}`;
-
-            const textPreview = obterPreviewConteudo(tipo, lote);
 
             const bannerDiv = document.createElement('div');
             bannerDiv.className = 'banner-lote';
             bannerDiv.style.backgroundImage = `url('${lote.banner}')`;
-            
-            bannerDiv.onclick = (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-                if (modoSelecaoLotes) return; 
-                alternarLote(tipo, lote.idLote);
-            };
-
+            bannerDiv.onclick = (e) => { if (!e.target.closest('button') && !modoSelecaoLotes) alternarLote(tipo, lote.idLote); };
             vincularEventosCardLote(bannerDiv, divLote, lote.idLote);
 
-            bannerDiv.innerHTML = `
-                <div class="banner-overlay"></div>
-                <div class="cabecalho-lote">
-                    <div class="info-lote">
-                        <div class="info-lote-topo">
-                            <span class="icone-seta">▼</span>
-                            <span>${lote.nome}</span>
-                            <span class="qtd-badge">${lote.itens.length}</span>
-                        </div>
-                        ${textPreview ? `<div class="preview-conteudo">${textPreview}</div>` : ''}
-                    </div>
-                    <div class="grupo-botoes-cabecalho" id="botoesCab_${tipo}_${lote.idLote}"></div>
-                </div>
-            `;
+            bannerDiv.innerHTML = `<div class="banner-overlay"></div><div class="cabecalho-lote"><div class="info-lote"><div class="info-lote-topo"><span class="icone-seta">▼</span><span>${lote.nome}</span><span class="qtd-badge">${lote.itens.length}</span></div>${obterPreviewConteudo(tipo, lote) ? `<div class="preview-conteudo">${obterPreviewConteudo(tipo, lote)}</div>` : ''}</div><div class="grupo-botoes-cabecalho" id="botoesCab_${tipo}_${lote.idLote}"></div></div>`;
             divLote.appendChild(bannerDiv);
 
             const btnGrupo = bannerDiv.querySelector(`#botoesCab_${tipo}_${lote.idLote}`);
+            btnGrupo.innerHTML = `<button class="btn-acao-lote" title="Renomear" onclick="event.stopPropagation(); renomearLote('${tipo}', ${lote.idLote})">✏️</button><button class="btn-acao-lote btn-arquivar-lote" onclick="event.stopPropagation(); arquivarLote('${tipo}', ${lote.idLote})">📦 Arquivar</button>`;
             
-            const btnRenomearL = document.createElement('button');
-            btnRenomearL.className = 'btn-acao-lote';
-            btnRenomearL.innerText = '✏️';
-            btnRenomearL.title = 'Renomear Lote';
-            btnRenomearL.onclick = (e) => { e.stopPropagation(); renomearLote(tipo, lote.idLote); };
-            btnGrupo.appendChild(btnRenomearL);
-
-            const btnArquivarL = document.createElement('button');
-            btnArquivarL.className = 'btn-acao-lote btn-arquivar-lote';
-            btnArquivarL.innerText = '📦 Arquivar';
-            btnArquivarL.onclick = (e) => { e.stopPropagation(); arquivarLote(tipo, lote.idLote); };
-            btnGrupo.appendChild(btnArquivarL);
-
             if (tipo === 'cards') {
-                const btnCopiarT = document.createElement('button');
-                btnCopiarT.className = 'btn-acao-lote btn-copiar-lote';
-                btnCopiarT.innerText = 'Copiar Todas';
-                btnCopiarT.onclick = (e) => { e.stopPropagation(); copiarTodosCartoesLote(lote.idLote); };
-
-                const btnApagarL = document.createElement('button');
-                btnApagarL.className = 'btn-acao-lote';
-                btnApagarL.innerText = 'Apagar';
-                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
-
-                btnGrupo.appendChild(btnCopiarT);
-                btnGrupo.appendChild(btnApagarL);
+                btnGrupo.innerHTML += `<button class="btn-acao-lote btn-copiar-lote" onclick="event.stopPropagation(); copiarTodosCartoesLote(${lote.idLote})">Copiar Todas</button>`;
             } else if (tipo === 'emails') {
-                if (!ehAssinada) {
-                    const btnCopiarA = document.createElement('button');
-                    btnCopiarA.className = 'btn-acao-lote btn-copiar-lote';
-                    btnCopiarA.innerText = 'Mover Assinadas';
-                    btnCopiarA.onclick = (e) => { e.stopPropagation(); copiarAssinadasDoLote(lote.idLote); };
-                    btnGrupo.appendChild(btnCopiarA);
-                } else {
-                    const btnCopiarTodasAssinadas = document.createElement('button');
-                    btnCopiarTodasAssinadas.className = 'btn-acao-lote btn-copiar-lote';
-                    btnCopiarTodasAssinadas.innerText = 'Copiar Todas';
-                    btnCopiarTodasAssinadas.onclick = (e) => { e.stopPropagation(); copiarTodosEmailsLote(lote.idLote); };
-                    btnGrupo.appendChild(btnCopiarTodasAssinadas);
-                }
-                const btnApagarL = document.createElement('button');
-                btnApagarL.className = 'btn-acao-lote';
-                btnApagarL.innerText = 'Apagar';
-                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
-                btnGrupo.appendChild(btnApagarL);
-            } else {
-                const btnApagarL = document.createElement('button');
-                btnApagarL.className = 'btn-acao-lote';
-                btnApagarL.innerText = 'Apagar';
-                btnApagarL.onclick = (e) => { e.stopPropagation(); excluirLote(tipo, lote.idLote); };
-                btnGrupo.appendChild(btnApagarL);
+                if (!ehAssinada) btnGrupo.innerHTML += `<button class="btn-acao-lote btn-copiar-lote" onclick="event.stopPropagation(); copiarAssinadasDoLote(${lote.idLote})">Mover Assinadas</button>`;
+                else btnGrupo.innerHTML += `<button class="btn-acao-lote btn-copiar-lote" onclick="event.stopPropagation(); copiarTodosEmailsLote(${lote.idLote})">Copiar Todas</button>`;
             }
+            btnGrupo.innerHTML += `<button class="btn-acao-lote" onclick="event.stopPropagation(); excluirLote('${tipo}', ${lote.idLote})">Apagar</button>`;
 
             const conteudoDiv = document.createElement('div');
             conteudoDiv.className = 'conteudo-lote';
             
+            let theadText = tipo === 'cards' ? `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>` : (tipo === 'emails' ? `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>` : `<tr><th>Nº</th><th>Nome / Dados</th><th>CPF</th><th>Nasc / Sexo</th><th>Ações</th></tr>`);
+            
             const tabelaContainer = document.createElement('div');
             tabelaContainer.className = 'tabela-container';
-            
-            const tabela = document.createElement('table');
-            let theadText = `<tr><th>Nº</th><th>Cartão</th><th>Val</th><th>CVV</th><th>Ação</th></tr>`;
-            if (tipo === 'emails') theadText = `<tr><th>Nº</th><th>Email/Login</th><th>Senha</th><th>Status</th><th>Ações</th></tr>`;
-            if (tipo === 'dados') theadText = `<tr><th>Nº</th><th>Nome / Dados</th><th>CPF</th><th>Nasc / Sexo</th><th>Ações</th></tr>`;
-            
-            tabela.innerHTML = `<thead>${theadText}</thead>`;
-
-            const tbody = document.createElement('tbody');
-
-            lote.itens.forEach((item, index) => {
-                const idUnico = `item_${tipo}_${lote.idLote}_${item.idItem}`;
-                const jaFoiUsado = appState[tipo].usados.includes(idUnico);
-                const ehUltimo = (idUnico === appState[tipo].ultimo);
-                
-                let classeStatus = 'btn-copiar';
-                let textoBotao = 'Copiar';
-                
-                if (jaFoiUsado) { classeStatus += ' usado'; textoBotao = 'Usado!'; }
-                if (ehUltimo) { classeStatus += ' ultimo-copiado'; }
-
-                const tr = document.createElement('tr');
-                tr.id = `tr_${idUnico}`;
-                tr.className = `linha-item ${index > 0 ? 'linha-secundaria' : ''}`;
-
-                let textToCopy = tipo === 'cards' ? item.principal : item.textoCompleto;
-                if (tipo === 'emails' && appState.emails.senhaPadrao) {
-                    let delimitador = textToCopy.includes(':') ? ':' : (textToCopy.includes('|') ? '|' : ':');
-                    textToCopy = `${item.principal}${delimitador}${appState.emails.senhaPadrao}`;
-                }
-
-                vincularEventosLinha(tr, idUnico, textToCopy, lote.idLote, item.idItem);
-
-                if (tipo === 'cards') {
-                    const stCard = item.statusCard || (item.isLive ? 'live' : 'pendente');
-
-                    tr.innerHTML = `
-                        <td><span class="badge-id">${item.idItem}</span></td>
-                        <td>
-                            <span class="cartao-num">${item.principal}</span>
-                            <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
-                        </td>
-                        <td>${item.secundario}</td>
-                        <td>
-                            ${item.terciario}
-                            <select class="status-card-select">
-                                <option value="pendente" ${stCard === 'pendente' ? 'selected' : ''}>⏳</option>
-                                <option value="live" ${stCard === 'live' ? 'selected' : ''}>✅</option>
-                                <option value="die" ${stCard === 'die' ? 'selected' : ''}>❌</option>
-                            </select>
-                        </td>
-                        <td><button class="btn-excluir-item">🗑️</button></td>
-                    `;
-
-                    tr.querySelector('.status-card-select').onchange = (e) => mudarStatusItemCard(lote.idLote, item.idItem, e.target.value);
-                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
-                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
-                } else if (tipo === 'emails') {
-                    const emailChave = item.principal.toLowerCase();
-                    const statusAtual = appState.emails.status[emailChave] || item.status || '';
-
-                    tr.innerHTML = `
-                        <td><span class="badge-id">${item.idItem}</span></td>
-                        <td class="email-text">${item.principal}</td>
-                        <td class="email-text">${appState.emails.senhaPadrao || item.secundario}</td>
-                        <td>
-                            <select class="status-select">
-                                <option value="" ${statusAtual === '' ? 'selected' : ''}>-</option>
-                                <option value="virgem" ${statusAtual === 'virgem' ? 'selected' : ''}>Virgem</option>
-                                <option value="suspensa" ${statusAtual === 'suspensa' ? 'selected' : ''}>Suspensa</option>
-                                <option value="assinada" ${statusAtual === 'assinada' ? 'selected' : ''}>Assinada</option>
-                                <option value="anuncios" ${statusAtual === 'anuncios' ? 'selected' : ''}>Anúncios</option>
-                                <option value="padrao" ${statusAtual === 'padrao' ? 'selected' : ''}>Padrão</option>
-                                <option value="premium" ${statusAtual === 'premium' ? 'selected' : ''}>Premium</option>
-                                <option value="queimada" ${statusAtual === 'queimada' ? 'selected' : ''}>Queimada</option>
-                            </select>
-                        </td>
-                        <td>
-                            <button class="${classeStatus}" data-id="${idUnico}">${textoBotao}</button>
-                            <button class="btn-excluir-item">🗑️</button>
-                        </td>
-                    `;
-
-                    tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(lote.idLote, item.idItem, item.principal, e.target.value);
-                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, textToCopy, e, idUnico);
-                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
-                } else {
-                    let classeCpf = 'btn-copiar-sec btn-cpf';
-                    let textoCpf = 'CPF';
-                    if (jaFoiUsado) { classeCpf += ' usado'; textoCpf = 'CPF!'; }
-                    if (ehUltimo) { classeCpf += ' ultimo-copiado'; }
-
-                    tr.innerHTML = `
-                        <td><span class="badge-id">${item.idItem}</span></td>
-                        <td class="email-text"><strong>${item.principal}</strong></td>
-                        <td class="cartao-num">${item.secundario}</td>
-                        <td class="email-text">${item.terciario}</td>
-                        <td>
-                            ${item.cpfLimpo ? `<button class="${classeCpf}" data-id="${idUnico}">${textoCpf}</button>` : ''}
-                            <button class="${classeStatus}" data-id="${idUnico}">Bloco</button>
-                            <button class="btn-excluir-item">🗑️</button>
-                        </td>
-                    `;
-
-                    if (item.cpfLimpo) {
-                        tr.querySelector('.btn-cpf').onclick = (e) => copiarTexto(e.target, tipo, item.cpfLimpo, e, idUnico);
-                    }
-                    tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, item.textoCompleto, e, idUnico);
-                    tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
-                }
-
-                tbody.appendChild(tr);
-            });
-
-            tabela.appendChild(tbody);
-            tabelaContainer.appendChild(tabela);
+            tabelaContainer.innerHTML = `<table><thead>${theadText}</thead><tbody id="tbody_${tipo}_${lote.idLote}"></tbody></table>`;
             conteudoDiv.appendChild(tabelaContainer);
             divLote.appendChild(conteudoDiv);
+            (ehAssinada ? document.getElementById('areaLotesAssinadas') : area).appendChild(divLote);
 
-            if (ehAssinada) {
-                document.getElementById('areaLotesAssinadas').appendChild(divLote);
-            } else {
-                area.appendChild(divLote);
-            }
+            const tbody = divLote.querySelector(`#tbody_${tipo}_${lote.idLote}`);
+            
+            lote.itens.forEach((item, index) => {
+                const idU = `item_${tipo}_${lote.idLote}_${item.idItem}`;
+                const jaFoiUsado = appState[tipo].usados.includes(idU);
+                const ehUltimo = (idU === appState[tipo].ultimo);
+                let cSt = 'btn-copiar', tBtn = 'Copiar';
+                if (jaFoiUsado) { cSt += ' usado'; tBtn = 'Usado!'; }
+                if (ehUltimo) { cSt += ' ultimo-copiado'; }
+
+                const tr = document.createElement('tr');
+                tr.id = `tr_${idU}`;
+                tr.className = `linha-item ${index > 0 ? 'linha-secundaria' : ''}`;
+
+                let txtCopy = tipo === 'cards' ? item.principal : item.textoCompleto;
+                if (tipo === 'emails' && appState.emails.senhaPadrao) {
+                    let del = txtCopy.includes(':') ? ':' : (txtCopy.includes('|') ? '|' : ':');
+                    txtCopy = `${item.principal}${del}${appState.emails.senhaPadrao}`;
+                }
+                vincularEventosLinha(tr, idU, txtCopy, lote.idLote, item.idItem);
+
+                if (tipo === 'cards') {
+                    const stC = item.statusCard || (item.isLive ? 'live' : 'pendente');
+                    tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td><span class="cartao-num">${item.principal}</span> <button class="${cSt}" data-id="${idU}">${tBtn}</button></td><td>${item.secundario}</td><td>${item.terciario} <select class="status-card-select"><option value="pendente" ${stC === 'pendente'?'selected':''}>⏳</option><option value="live" ${stC === 'live'?'selected':''}>✅</option><option value="die" ${stC === 'die'?'selected':''}>❌</option></select></td><td><button class="btn-excluir-item">🗑️</button></td>`;
+                    tr.querySelector('.status-card-select').onchange = (e) => mudarStatusItemCard(lote.idLote, item.idItem, e.target.value);
+                } else if (tipo === 'emails') {
+                    const stA = appState.emails.status[item.principal.toLowerCase()] || item.status || '';
+                    tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td class="email-text">${item.principal}</td><td class="email-text">${appState.emails.senhaPadrao || item.secundario}</td><td><select class="status-select"><option value="" ${stA===''?'selected':''}>-</option><option value="virgem" ${stA==='virgem'?'selected':''}>Virgem</option><option value="suspensa" ${stA==='suspensa'?'selected':''}>Suspensa</option><option value="assinada" ${stA==='assinada'?'selected':''}>Assinada</option><option value="anuncios" ${stA==='anuncios'?'selected':''}>Anúncios</option><option value="padrao" ${stA==='padrao'?'selected':''}>Padrão</option><option value="premium" ${stA==='premium'?'selected':''}>Premium</option><option value="queimada" ${stA==='queimada'?'selected':''}>Queimada</option></select></td><td><button class="${cSt}" data-id="${idU}">${tBtn}</button> <button class="btn-excluir-item">🗑️</button></td>`;
+                    tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(lote.idLote, item.idItem, item.principal, e.target.value);
+                } else {
+                    let cCpf = 'btn-copiar-sec btn-cpf', tCpf = 'CPF';
+                    if (jaFoiUsado) { cCpf += ' usado'; tCpf = 'CPF!'; }
+                    if (ehUltimo) { cCpf += ' ultimo-copiado'; }
+                    tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td class="email-text"><strong>${item.principal}</strong></td><td class="cartao-num">${item.secundario}</td><td class="email-text">${item.terciario}</td><td>${item.cpfLimpo ? `<button class="${cCpf}" data-id="${idU}">${tCpf}</button>` : ''}<button class="${cSt}" data-id="${idU}">Bloco</button> <button class="btn-excluir-item">🗑️</button></td>`;
+                    if (item.cpfLimpo) tr.querySelector('.btn-cpf').onclick = (e) => copiarTexto(e.target, tipo, item.cpfLimpo, e, idU);
+                }
+
+                tr.querySelector('.btn-copiar').onclick = (e) => copiarTexto(e.target, tipo, txtCopy, e, idU);
+                tr.querySelector('.btn-excluir-item').onclick = (e) => { e.stopPropagation(); excluirItem(tipo, lote.idLote, item.idItem); };
+                tbody.appendChild(tr);
+            });
         });
 
         if (tipo === 'emails') {
-            document.getElementById('qtdLotesAssinadas').innerText = totalLotesAssinadas;
-            document.getElementById('cardPastaAssinadas').style.display = totalLotesAssinadas > 0 ? 'block' : 'none';
+            document.getElementById('qtdLotesAssinadas').innerText = lotesAssinadas;
+            document.getElementById('cardPastaAssinadas').style.display = lotesAssinadas > 0 ? 'block' : 'none';
         }
-
         filtrarItens(tipo);
     }
 
@@ -2823,119 +2331,76 @@
         if (e) e.stopPropagation();
         copiarParaAreaTransferencia(texto).then(() => {
             const id = idUnico || botao.getAttribute('data-id');
-
-            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(btn => {
-                btn.classList.remove('ultimo-copiado');
-            });
+            document.querySelectorAll(`#view-${tipo} .btn-copiar.ultimo-copiado, #view-${tipo} .btn-copiar-sec.ultimo-copiado`).forEach(btn => btn.classList.remove('ultimo-copiado'));
 
             const tr = document.getElementById(`tr_${id}`);
             if (tr && tipo === 'dados') {
                 const btnBloco = tr.querySelector('.btn-copiar');
                 const btnCpf = tr.querySelector('.btn-cpf');
-                
-                if (btnBloco) {
-                    btnBloco.innerText = 'Usado!';
-                    btnBloco.classList.add('usado');
-                    if (botao === btnBloco) btnBloco.classList.add('ultimo-copiado');
-                }
-                if (btnCpf) {
-                    btnCpf.innerText = 'CPF!';
-                    btnCpf.classList.add('usado');
-                    if (botao === btnCpf) btnCpf.classList.add('ultimo-copiado');
-                }
+                if (btnBloco) { btnBloco.innerText = 'Usado!'; btnBloco.classList.add('usado'); if (botao === btnBloco) btnBloco.classList.add('ultimo-copiado'); }
+                if (btnCpf) { btnCpf.innerText = 'CPF!'; btnCpf.classList.add('usado'); if (botao === btnCpf) btnCpf.classList.add('ultimo-copiado'); }
             } else {
-                botao.innerText = 'Usado!';
-                botao.classList.add('usado', 'ultimo-copiado');
+                botao.innerText = 'Usado!'; botao.classList.add('usado', 'ultimo-copiado');
             }
 
             if (id && !appState[tipo].usados.includes(id)) {
                 appState[tipo].usados.push(id);
-                localStorage.setItem(CHAVES[tipo].usados, JSON.stringify(appState[tipo].usados));
+                BancoDB.set(CHAVES[tipo].usados, appState[tipo].usados);
             }
-            
             if (id) {
                 appState[tipo].ultimo = id;
-                localStorage.setItem(CHAVES[tipo].ultimo, id);
+                BancoDB.set(CHAVES[tipo].ultimo, id);
             }
-
-            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) {
-                filtrarItens(tipo);
-            }
-            
+            if (appState[tipo].ocultar || (tipo === 'emails' && appState.emails.filtroAtual === 'ocultar_usados')) filtrarItens(tipo);
             mostrarStatus('Copiado!');
-        }).catch(err => console.error('Erro ao copiar: ', err));
+        });
     }
 
     function gerarglobaisBackupJSON() {
-        return JSON.stringify({
-            versao: '16.9',
-            dataExportacao: new Date().toLocaleString('pt-BR'),
-            cards: appState.cards,
-            emails: appState.emails,
-            dados: appState.dados,
-            lixeira: appState.lixeira,
-            arquivados: appState.arquivados
-        }, null, 2);
+        return JSON.stringify({ versao: '17.0', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
     }
 
     function exportarBackup() {
         const dataStr = gerarglobaisBackupJSON();
         const blob = new Blob([dataStr], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `bklogins_full_backup_${gerarDataHoraFormatada().replace(/[^\w]/g, '-')}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        a.href = url; a.download = `bklogins_full_backup_${gerarDataHoraFormatada().replace(/[^\w]/g, '-')}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }
 
     function importarBackup(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
-                const conteudo = e.target.result;
-                let data = JSON.parse(conteudo);
+                mostrarStatus('⏳ Gravando backup no Banco de Dados...');
+                let data = JSON.parse(e.target.result);
+                
+                appState.cards = data.cards || appState.cards;
+                appState.emails = data.emails || appState.emails;
+                appState.dados = data.dados || appState.dados;
+                appState.lixeira = data.lixeira || [];
+                appState.arquivados = data.arquivados || [];
 
-                let dadosCards = data.cards || {};
-                let dadosEmails = data.emails || {};
-                let dadosPessoas = data.dados || {};
-                let dadosLixeira = data.lixeira || [];
-                let dadosArquivados = data.arquivados || [];
+                // Agora espera o banco de dados salvar TUDO sem crashar
+                await Promise.all([
+                    BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes),
+                    BancoDB.set(CHAVES.cards.usados, appState.cards.usados),
+                    BancoDB.set(CHAVES.emails.lotes, appState.emails.lotes),
+                    BancoDB.set(CHAVES.emails.usados, appState.emails.usados),
+                    BancoDB.set(CHAVES.emails.status, appState.emails.status),
+                    BancoDB.set(CHAVES.dados.lotes, appState.dados.lotes),
+                    BancoDB.set(CHAVES.dados.usados, appState.dados.usados),
+                    BancoDB.set(CHAVES.lixeira, appState.lixeira),
+                    BancoDB.set(CHAVES.arquivados, appState.arquivados)
+                ]);
 
-                localStorage.setItem(CHAVES.cards.lotes, JSON.stringify(dadosCards.lotes || []));
-                localStorage.setItem(CHAVES.cards.usados, JSON.stringify(dadosCards.usados || []));
-
-                localStorage.setItem(CHAVES.emails.lotes, JSON.stringify(dadosEmails.lotes || []));
-                localStorage.setItem(CHAVES.emails.usados, JSON.stringify(dadosEmails.usados || []));
-                localStorage.setItem(CHAVES.emails.status, JSON.stringify(dadosEmails.status || {}));
-
-                localStorage.setItem(CHAVES.dados.lotes, JSON.stringify(dadosPessoas.lotes || []));
-                localStorage.setItem(CHAVES.dados.usados, JSON.stringify(dadosPessoas.usados || []));
-                localStorage.setItem(CHAVES.lixeira, JSON.stringify(dadosLixeira));
-                localStorage.setItem(CHAVES.arquivados, JSON.stringify(dadosArquivados));
-
-                appState.cards.lotes = dadosCards.lotes || [];
-                appState.emails.lotes = dadosEmails.lotes || [];
-                appState.dados.lotes = dadosPessoas.lotes || [];
-                appState.lixeira = dadosLixeira;
-                appState.arquivados = dadosArquivados;
-
-                renderizarTodosLotes('cards');
-                renderizarTodosLotes('emails');
-                renderizarTodosLotes('dados');
-                renderizarLixeira();
-                renderizarArquivados();
-
+                renderizarTodosLotes('cards'); renderizarTodosLotes('emails'); renderizarTodosLotes('dados');
+                renderizarLixeira(); renderizarArquivados();
                 alert('✅ Backup importado com sucesso!');
-            } catch (err) {
-                alert('❌ Erro ao ler ficheiro de backup.');
-            }
+            } catch (err) { alert('❌ Erro ao ler ficheiro de backup.'); }
             event.target.value = '';
         };
         reader.readAsText(file);
@@ -2943,87 +2408,30 @@
 
     function enviarTelegramManual() {
         salvarConfiguracoesBackup();
-        const token = document.getElementById('cfgTelegramToken').value.trim();
-        const chatId = document.getElementById('cfgTelegramChatId').value.trim();
-
-        if (!token || !chatId) {
-            alert('⚠️ Preencha o Token do Bot e o seu Chat ID primeiro.');
-            return;
-        }
-
-        const conteudoJson = gerarglobaisBackupJSON();
-        const blob = new Blob([conteudoJson], { type: 'application/json' });
-        
+        const token = document.getElementById('cfgTelegramToken').value.trim(), chatId = document.getElementById('cfgTelegramChatId').value.trim();
+        if (!token || !chatId) { alert('⚠️ Preencha Token e Chat ID.'); return; }
+        const blob = new Blob([gerarglobaisBackupJSON()], { type: 'application/json' });
         const formData = new FormData();
-        formData.append('chat_id', chatId);
-        formData.append('caption', `📦 *Backup bklogins*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`);
-        formData.append('parse_mode', 'Markdown');
-        formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
-
+        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
         mostrarStatus('⏳ Enviando para o Telegram...');
-
-        fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(dados => {
-            if (dados.ok) {
-                alert('✅ Backup enviado com sucesso para o Telegram!');
-            } else {
-                alert('❌ Erro ao enviar para o Telegram: ' + (dados.description || 'Verifique o Token e Chat ID'));
-            }
-        })
-        .catch(err => {
-            alert('❌ Erro de conexão ao enviar para o Telegram.');
-        });
+        fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: formData })
+        .then(res => res.json()).then(d => d.ok ? alert('✅ Enviado!') : alert('❌ Erro: ' + d.description)).catch(() => alert('❌ Erro de conexão.'));
     }
 
     function enviarEmailManual() {
         salvarConfiguracoesBackup();
         const emailPara = document.getElementById('cfgGmailPara').value.trim();
-
-        if (!emailPara) {
-            alert('⚠️ Preencha o seu e-mail de destino primeiro.');
-            return;
-        }
-
-        const conteudoJson = gerarglobaisBackupJSON();
-
+        if (!emailPara) { alert('⚠️ Preencha o e-mail de destino.'); return; }
         mostrarStatus('⏳ Enviando e-mail...');
-
-        fetch(`https://formsubmit.co/ajax/${emailPara}`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                _subject: `📦 Backup bklogins - ${new Date().toLocaleDateString('pt-BR')}`,
-                message: "Segue em anexo os dados do seu backup em formato de texto JSON:",
-                backup_dados: conteudoJson
-            })
-        })
-        .then(res => res.json())
-        .then(dados => {
-            alert('✅ Backup enviado por e-mail com sucesso!');
-        })
-        .catch(err => {
-            alert('❌ Erro ao enviar o e-mail. Verifique o seu endereço de e-mail.');
-        });
+        fetch(`https://formsubmit.co/ajax/${emailPara}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ _subject: `📦 Backup bklogins - ${new Date().toLocaleDateString('pt-BR')}`, message: "Backup em anexo:", backup_dados: gerarglobaisBackupJSON() }) })
+        .then(res => res.json()).then(() => alert('✅ E-mail enviado!')).catch(() => alert('❌ Erro ao enviar e-mail.'));
     }
 </script>
 
-<!-- SCRIPT DO MODO OFFLINE -->
 <script>
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Modo Offline ativado com sucesso!'))
-                .catch(err => console.log('Erro ao ativar modo offline:', err));
-        });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
     }
 </script>
-
 </body>
 </html>
