@@ -1237,33 +1237,42 @@
     }
 
     function restaurarLoteArquivado(idArquivado) {
-        // 1. Avisa o usuário que o processo começou
         mostrarStatus('⏳ Restaurando Lote... Aguarde.');
 
-        // 2. Dá um pequeno atraso (50ms) para o navegador não congelar o clique
         setTimeout(() => {
-            const index = appState.arquivados.findIndex(a => a.idArquivado == idArquivado);
-            if (index === -1) return;
+            try {
+                // Procura o lote arquivado garantindo que os IDs sejam comparados como texto
+                const index = appState.arquivados.findIndex(a => String(a.idArquivado) === String(idArquivado));
+                
+                if (index === -1) {
+                    alert('❌ Erro: O sistema não encontrou o ID desse lote nos arquivados.');
+                    mostrarStatus('Erro na busca.');
+                    return;
+                }
 
-            const itemArq = appState.arquivados[index];
-            const tipo = itemArq.tipo;
+                const itemArq = appState.arquivados[index];
+                const tipo = itemArq.tipo;
 
-            if (!appState[tipo].lotes) appState[tipo].lotes = [];
-            
-            // Move o lote de volta para a tela principal
-            appState[tipo].lotes.unshift(itemArq.lote);
-            appState.arquivados.splice(index, 1);
+                if (!appState[tipo].lotes) appState[tipo].lotes = [];
+                
+                // Move o lote para a aba principal
+                appState[tipo].lotes.unshift(itemArq.lote);
+                appState.arquivados.splice(index, 1);
 
-            // Salva na memória
-            localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
-            localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
+                // Salva a alteração na memória do navegador
+                localStorage.setItem(CHAVES[tipo].lotes, JSON.stringify(appState[tipo].lotes));
+                localStorage.setItem(CHAVES.arquivados, JSON.stringify(appState.arquivados));
 
-            // Atualiza as telas
-            renderizarTodosLotes(tipo);
-            renderizarArquivados();
-            
-            mostrarStatus('✅ Lote restaurado com sucesso!');
-        }, 50);
+                // Em vez de forçar a tela a redesenhar tudo (o que trava a aba), 
+                // recarregamos a página. É instantâneo, seguro e exibe o lote restaurado perfeitamente.
+                window.location.reload();
+                
+            } catch (erro) {
+                // Se der erro, ele não vai mais travar silenciosamente. Ele vai gritar o motivo:
+                alert('❌ O código falhou com este erro exato:\n\n' + erro.name + ': ' + erro.message + '\n\nPor favor, me envie essa mensagem para eu consertar!');
+                mostrarStatus('❌ Falha na restauração.');
+            }
+        }, 100);
     }
 
     function deletarPermanenteArquivado(idArquivado) {
