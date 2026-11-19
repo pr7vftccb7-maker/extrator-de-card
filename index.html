@@ -883,7 +883,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.2 Ultra</div>
+                <div class="versao-tag">v17.3 Ultra</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -923,7 +923,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.2 Ultra</div>
+                <div class="versao-tag">v17.3 Ultra</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -988,7 +988,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.2 Ultra</div>
+                <div class="versao-tag">v17.3 Ultra</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1019,7 +1019,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.2 Ultra</div>
+                <div class="versao-tag">v17.3 Ultra</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1245,11 +1245,6 @@
         } catch (e) {
             copiou = false;
         }
-
-        if (!copiou && navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(texto).catch(() => {});
-            copiou = true;
-        }
         return copiou;
     }
 
@@ -1282,6 +1277,29 @@
         el.innerText = mensagem;
         el.style.display = 'block';
         setTimeout(() => { el.style.display = 'none'; }, 2000);
+    }
+
+    function abrirCaixaCopiaManual(texto) {
+        let caixa = document.getElementById('modalCopiaManual');
+        if (!caixa) {
+            caixa = document.createElement('div');
+            caixa.id = 'modalCopiaManual';
+            caixa.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:20000;display:flex;align-items:center;justify-content:center;padding:15px;';
+            caixa.innerHTML = `
+                <div style="background:#222;border:1px solid #444;border-radius:10px;padding:16px;width:100%;max-width:460px;">
+                    <div style="font-weight:800;margin-bottom:8px;color:#fff;">Cópia manual (selecione e copie):</div>
+                    <textarea id="txtCopiaManual" style="width:100%;height:180px;background:#111;color:#fff;border:1px solid #555;border-radius:6px;padding:8px;font-family:monospace;"></textarea>
+                    <button id="btnFecharCopiaManual" style="margin-top:10px;width:100%;padding:10px;background:#E50914;color:#fff;border:none;border-radius:6px;font-weight:800;cursor:pointer;">Fechar</button>
+                </div>
+            `;
+            document.body.appendChild(caixa);
+            document.getElementById('btnFecharCopiaManual').onclick = () => { caixa.style.display = 'none'; };
+        }
+        const ta = document.getElementById('txtCopiaManual');
+        ta.value = texto;
+        caixa.style.display = 'flex';
+        ta.focus();
+        ta.select();
     }
 
     function gerarDataHoraFormatada() {
@@ -2169,10 +2187,10 @@
         }
 
         const resultadoTexto = linhasParaCopiar.join('\n');
-        const ok = copiarSincrono(resultadoTexto);
+        const copiou = copiarSincrono(resultadoTexto);
 
-        if (!ok) {
-            alert('❌ O navegador bloqueou a cópia. Tente abrir pelo GitHub Pages ou servidor local.');
+        if (!copiou) {
+            abrirCaixaCopiaManual(resultadoTexto);
             return;
         }
 
@@ -2457,7 +2475,7 @@
     }
 
     function gerarglobaisBackupJSON() {
-        return JSON.stringify({ versao: '17.2', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
+        return JSON.stringify({ versao: '17.3', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
     }
 
     function exportarBackup() {
@@ -2511,7 +2529,7 @@
         if (!token || !chatId) { alert('⚠️ Preencha Token e Chat ID.'); return; }
         const blob = new Blob([gerarglobaisBackupJSON()], { type: 'application/json' });
         const formData = new FormData();
-        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.2*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
+        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.3*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
         mostrarStatus('⏳ Enviando para o Telegram...');
         fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: formData })
         .then(res => res.json()).then(d => d.ok ? alert('✅ Enviado!') : alert('❌ Erro: ' + d.description)).catch(() => alert('❌ Erro de conexão.'));
@@ -2534,4 +2552,3 @@
 </script>
 </body>
 </html>
- 
