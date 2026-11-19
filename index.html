@@ -1067,9 +1067,6 @@
 </nav>
 
 <script>
-    // ==========================================
-    // 1. MOTOR DO BANCO DE DADOS (IndexedDB)
-    // ==========================================
     const BancoDB = {
         db: null,
         init() {
@@ -1144,16 +1141,12 @@
     let timerPressionar = null;
     let acaoModalPendente = null;
 
-    // ==========================================
-    // 2. INICIALIZAÇÃO ASSÍNCRONA & AUTO-MIGRAÇÃO
-    // ==========================================
     window.addEventListener('DOMContentLoaded', async () => {
         try {
             await BancoDB.init();
             
             const migrado = await BancoDB.get('migracao_v17_concluida');
             if (!migrado) {
-                console.log("Iniciando migração dos dados antigos...");
                 const chavesAll = [
                     CHAVES.cards.lotes, CHAVES.cards.usados, CHAVES.cards.abertos, CHAVES.cards.ocultar, CHAVES.cards.ultimo,
                     CHAVES.emails.lotes, CHAVES.emails.usados, CHAVES.emails.abertos, CHAVES.emails.filtroAtual, CHAVES.emails.status, CHAVES.emails.ultimo, CHAVES.emails.senhaPadrao, CHAVES.emails.pastaAberta,
@@ -1231,32 +1224,43 @@
         }
     });
 
-    function copiarParaAreaTransferencia(texto) {
-        if (navigator.clipboard && window.isSecureContext) {
-            return navigator.clipboard.writeText(texto).catch(() => copiarViaTextareaFallback(texto));
+    function copiarSincrono(texto) {
+        let copiou = false;
+        try {
+            const areaTexto = document.createElement('textarea');
+            areaTexto.value = texto;
+            areaTexto.setAttribute('readonly', '');
+            areaTexto.style.position = 'fixed';
+            areaTexto.style.top = '0';
+            areaTexto.style.left = '0';
+            areaTexto.style.width = '2px';
+            areaTexto.style.height = '2px';
+            areaTexto.style.opacity = '0.01';
+            document.body.appendChild(areaTexto);
+            areaTexto.focus();
+            areaTexto.select();
+            areaTexto.setSelectionRange(0, texto.length);
+            copiou = document.execCommand('copy');
+            document.body.removeChild(areaTexto);
+        } catch (e) {
+            copiou = false;
         }
-        return copiarViaTextareaFallback(texto);
+
+        if (!copiou && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).catch(() => {});
+            copiou = true;
+        }
+        return copiou;
     }
 
-    function copiarViaTextareaFallback(texto) {
-        return new Promise((res, rej) => {
-            try {
-                const areaTexto = document.createElement("textarea");
-                areaTexto.value = texto;
-                areaTexto.setAttribute("readonly", "");
-                areaTexto.style.position = "fixed";
-                areaTexto.style.top = "0";
-                areaTexto.style.left = "0";
-                areaTexto.style.opacity = "0";
-                document.body.appendChild(areaTexto);
-                areaTexto.focus();
-                areaTexto.select();
-                areaTexto.setSelectionRange(0, texto.length);
-                const ok = document.execCommand('copy');
-                document.body.removeChild(areaTexto);
-                ok ? res() : rej();
-            } catch (e) {
-                rej();
+    function copiarParaAreaTransferencia(texto) {
+        return new Promise((resolve, reject) => {
+            if (copiarSincrono(texto)) {
+                resolve();
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(resolve).catch(reject);
+            } else {
+                reject();
             }
         });
     }
@@ -2114,8 +2118,8 @@
             if (t.length > 2) termos.push(t);
         });
 
-        let textoCompleto = '';
-        let quantidadeCopiada = 0;
+        const linhasParaCopiar = [];
+        const idsMarcados = [];
 
         lote.itens.forEach(item => {
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
@@ -2125,7 +2129,9 @@
             if (!email) return;
 
             const emailChave = email.toLowerCase();
-            const statusAtual = appState.emails.status[emailChave] || item.status || '';
+            const statusAtual = (appState.emails.status && appState.emails.status[emailChave] !== undefined)
+                ? appState.emails.status[emailChave]
+                : (item.status || '');
 
             let pesquisaOk = true;
             if (termos.length > 0) {
@@ -2146,31 +2152,38 @@
 
                 if (!senhaPadrao && (!senha || senha === '-') && item.textoCompleto) {
                     const partes = item.textoCompleto.split(/[:|]/);
-                    if (partes[1]) senha = partes[1].trim();
+                    if (partes.length > 1 && partes.slice(1).join(':').trim()) {
+                        senha = partes.slice(1).join(':').trim();
+                    }
                 }
 
-                const linhaFormatada = (senha && senha !== '-') ? `${email}:${senha}` : email;
-                textoCompleto += linhaFormatada + '\n';
-                quantidadeCopiada++;
-
-                if (!appState.emails.usados.includes(idUnico)) {
-                    appState.emails.usados.push(idUnico);
-                }
+                const linha = (senha && senha !== '-') ? `${email}:${senha}` : email;
+                linhasParaCopiar.push(linha);
+                idsMarcados.push(idUnico);
             }
         });
 
-        if (quantidadeCopiada === 0) {
-            alert('⚠️ Nenhuma conta corresponde ao filtro/pesquisa atual neste lote.');
+        if (linhasParaCopiar.length === 0) {
+            alert('⚠️ Nenhuma conta bateu com o filtro ou busca atual.');
             return;
         }
 
-        copiarParaAreaTransferencia(textoCompleto.trim()).then(() => {
-            BancoDB.set(CHAVES.emails.usados, appState.emails.usados);
-            renderizarTodosLotes('emails');
-            mostrarStatus(`✅ ${quantidadeCopiada} conta(s) copiada(s) (email:senha)!`);
-        }).catch(() => {
-            alert('❌ Não foi possível copiar para a área de transferência. Verifique as permissões do navegador.');
+        const resultadoTexto = linhasParaCopiar.join('\n');
+        const ok = copiarSincrono(resultadoTexto);
+
+        if (!ok) {
+            alert('❌ O navegador bloqueou a cópia. Tente abrir pelo GitHub Pages ou servidor local.');
+            return;
+        }
+
+        idsMarcados.forEach(id => {
+            if (!appState.emails.usados.includes(id)) {
+                appState.emails.usados.push(id);
+            }
         });
+        BancoDB.set(CHAVES.emails.usados, appState.emails.usados);
+        renderizarTodosLotes('emails');
+        mostrarStatus(`✅ ${linhasParaCopiar.length} conta(s) copiada(s)!`);
     }
 
     function excluirItem(tipo, idLote, idItem) {
