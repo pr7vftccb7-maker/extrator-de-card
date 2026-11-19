@@ -883,7 +883,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.1 Ultra</div>
+                <div class="versao-tag">v17.2 Ultra</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -923,7 +923,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.1 Ultra</div>
+                <div class="versao-tag">v17.2 Ultra</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -988,7 +988,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.1 Ultra</div>
+                <div class="versao-tag">v17.2 Ultra</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1019,7 +1019,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.1 Ultra</div>
+                <div class="versao-tag">v17.2 Ultra</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1233,20 +1233,32 @@
 
     function copiarParaAreaTransferencia(texto) {
         if (navigator.clipboard && window.isSecureContext) {
-            return navigator.clipboard.writeText(texto);
-        } else {
-            const areaTexto = document.createElement("textarea");
-            areaTexto.value = texto;
-            areaTexto.style.position = "fixed";
-            areaTexto.style.left = "-999999px";
-            document.body.appendChild(areaTexto);
-            areaTexto.focus();
-            areaTexto.select();
-            return new Promise((res, rej) => {
-                document.execCommand('copy') ? res() : rej();
-                areaTexto.remove();
-            });
+            return navigator.clipboard.writeText(texto).catch(() => copiarViaTextareaFallback(texto));
         }
+        return copiarViaTextareaFallback(texto);
+    }
+
+    function copiarViaTextareaFallback(texto) {
+        return new Promise((res, rej) => {
+            try {
+                const areaTexto = document.createElement("textarea");
+                areaTexto.value = texto;
+                areaTexto.setAttribute("readonly", "");
+                areaTexto.style.position = "fixed";
+                areaTexto.style.top = "0";
+                areaTexto.style.left = "0";
+                areaTexto.style.opacity = "0";
+                document.body.appendChild(areaTexto);
+                areaTexto.focus();
+                areaTexto.select();
+                areaTexto.setSelectionRange(0, texto.length);
+                const ok = document.execCommand('copy');
+                document.body.removeChild(areaTexto);
+                ok ? res() : rej();
+            } catch (e) {
+                rej();
+            }
+        });
     }
 
     function mostrarModal(titulo, texto, aoConfirmar) {
@@ -2082,26 +2094,62 @@
 
     function copiarTodosEmailsLote(idLote) {
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
-        if (!lote || !lote.itens || lote.itens.length === 0) return;
+        if (!lote || !lote.itens || lote.itens.length === 0) {
+            alert('⚠️ Lote vazio ou não encontrado.');
+            return;
+        }
+
+        const senhaPadrao = (appState.emails.senhaPadrao || '').trim();
+        const filtroAtual = appState.emails.filtroAtual || 'todos';
+        const ultimoId = appState.emails.ultimo;
+
+        const campoPesquisa = document.getElementById('campoPesquisaEmails');
+        const textoPesquisa = campoPesquisa ? campoPesquisa.value : '';
+        const termos = [];
+        (textoPesquisa ? textoPesquisa.split(/[\r\n,;\s]+/) : []).forEach(b => {
+            let t = b.trim().toLowerCase();
+            if (!t) return;
+            if (t.includes(':')) t = t.split(':')[0].trim();
+            else if (t.includes('|')) t = t.split('|')[0].trim();
+            if (t.length > 2) termos.push(t);
+        });
 
         let textoCompleto = '';
         let quantidadeCopiada = 0;
-        const senhaPadrao = appState.emails.senhaPadrao;
 
         lote.itens.forEach(item => {
             const idUnico = `item_emails_${lote.idLote}_${item.idItem}`;
-            const trElemento = document.getElementById(`tr_${idUnico}`);
+            const jaFoiUsado = appState.emails.usados.includes(idUnico);
+            const ehOUltimo = (idUnico === ultimoId);
+            const email = (item.principal || '').trim();
+            if (!email) return;
 
-            if (trElemento && !trElemento.classList.contains('linha-oculta')) {
-                const email = (item.principal || '').trim();
-                let senha = senhaPadrao ? senhaPadrao.trim() : (item.secundario || '').trim();
+            const emailChave = email.toLowerCase();
+            const statusAtual = appState.emails.status[emailChave] || item.status || '';
+
+            let pesquisaOk = true;
+            if (termos.length > 0) {
+                const txtPrin = emailChave;
+                const txtSec = (item.secundario || '').toLowerCase();
+                pesquisaOk = termos.some(termo => txtPrin.includes(termo) || txtSec.includes(termo));
+            }
+
+            let filtroOk = true;
+            if (filtroAtual === 'ocultar_usados') {
+                filtroOk = !jaFoiUsado || ehOUltimo;
+            } else if (filtroAtual !== 'todos') {
+                filtroOk = (statusAtual === filtroAtual);
+            }
+
+            if (pesquisaOk && filtroOk) {
+                let senha = senhaPadrao ? senhaPadrao : (item.secundario || '').trim();
 
                 if (!senhaPadrao && (!senha || senha === '-') && item.textoCompleto) {
                     const partes = item.textoCompleto.split(/[:|]/);
                     if (partes[1]) senha = partes[1].trim();
                 }
 
-                const linhaFormatada = senha && senha !== '-' ? `${email}:${senha}` : email;
+                const linhaFormatada = (senha && senha !== '-') ? `${email}:${senha}` : email;
                 textoCompleto += linhaFormatada + '\n';
                 quantidadeCopiada++;
 
@@ -2112,7 +2160,7 @@
         });
 
         if (quantidadeCopiada === 0) {
-            alert('⚠️ Nenhuma conta visível com o filtro atual para copiar.');
+            alert('⚠️ Nenhuma conta corresponde ao filtro/pesquisa atual neste lote.');
             return;
         }
 
@@ -2120,7 +2168,9 @@
             BancoDB.set(CHAVES.emails.usados, appState.emails.usados);
             renderizarTodosLotes('emails');
             mostrarStatus(`✅ ${quantidadeCopiada} conta(s) copiada(s) (email:senha)!`);
-        }).catch(() => alert('❌ Erro ao acessar a área de transferência.'));
+        }).catch(() => {
+            alert('❌ Não foi possível copiar para a área de transferência. Verifique as permissões do navegador.');
+        });
     }
 
     function excluirItem(tipo, idLote, idItem) {
@@ -2394,7 +2444,7 @@
     }
 
     function gerarglobaisBackupJSON() {
-        return JSON.stringify({ versao: '17.1', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
+        return JSON.stringify({ versao: '17.2', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
     }
 
     function exportarBackup() {
@@ -2448,7 +2498,7 @@
         if (!token || !chatId) { alert('⚠️ Preencha Token e Chat ID.'); return; }
         const blob = new Blob([gerarglobaisBackupJSON()], { type: 'application/json' });
         const formData = new FormData();
-        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.1*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
+        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.2*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
         mostrarStatus('⏳ Enviando para o Telegram...');
         fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: formData })
         .then(res => res.json()).then(d => d.ok ? alert('✅ Enviado!') : alert('❌ Erro: ' + d.description)).catch(() => alert('❌ Erro de conexão.'));
