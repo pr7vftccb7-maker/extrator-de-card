@@ -250,8 +250,8 @@
             width: 100%;
         }
         .btn-filtro-usados, .btn-backup {
-            flex: 1 1 30%;
-            min-width: 90px;
+            flex: 1 1 22%;
+            min-width: 85px;
             padding: 10px 8px;
             background-color: #2b2b2b;
             color: white;
@@ -891,7 +891,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.5 Ultra</div>
+                <div class="versao-tag">v17.6 Ultra</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -915,6 +915,12 @@
                 <button class="btn-limpar-pesquisa" id="btnLimparPesquisaCards">✕</button>
             </div>
             <div class="grupo-botoes-filtros">
+                <select id="filtroStatusCards" class="btn-filtro-usados">
+                    <option value="todos">Card: Todos</option>
+                    <option value="live">✅ LIVE</option>
+                    <option value="die">❌ DIE</option>
+                    <option value="pendente">⌛️ Pendente</option>
+                </select>
                 <button id="btnOcultarUsadosCards" class="btn-filtro-usados">Ocultar Usados</button>
                 <button class="btn-backup btn-exp-backup">⬇️ Backup</button>
                 <button class="btn-backup btn-imp-backup">⬆️ Restaurar</button>
@@ -931,7 +937,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.5 Ultra</div>
+                <div class="versao-tag">v17.6 Ultra</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -996,7 +1002,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.5 Ultra</div>
+                <div class="versao-tag">v17.6 Ultra</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1027,7 +1033,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.5 Ultra</div>
+                <div class="versao-tag">v17.6 Ultra</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1116,7 +1122,7 @@
     };
 
     const CHAVES = {
-        cards: { lotes: 'lotes_cartoes_geral', usados: 'botoes_usados_cartoes_geral', abertos: 'lotes_abertos_cartoes_geral', ocultar: 'filtro_ocultar_cartoes_geral', ultimo: 'ultimo_copiado_cartoes_geral' },
+        cards: { lotes: 'lotes_cartoes_geral', usados: 'botoes_usados_cartoes_geral', abertos: 'lotes_abertos_cartoes_geral', ocultar: 'filtro_ocultar_cartoes_geral', filtroStatus: 'filtro_status_cards_v17_6', ultimo: 'ultimo_copiado_cartoes_geral' },
         emails: { lotes: 'lotes_emails_geral', usados: 'botoes_usados_emails_geral', abertos: 'lotes_abertos_emails_geral', ocultar: 'filtro_ocultar_emails_geral', filtroAtual: 'filtro_atual_emails_v16_9', status: 'status_emails_geral', statusData: 'status_data_emails_v17_5', ultimo: 'ultimo_copiado_emails_geral', senhaPadrao: 'senha_padrao_assinadas_geral', pastaAberta: 'pasta_assinadas_aberta' },
         dados: { lotes: 'lotes_dados_geral', usados: 'botoes_usados_dados_geral', abertos: 'lotes_abertos_dados_geral', ocultar: 'filtro_ocultar_dados_geral', ultimo: 'ultimo_copiado_dados_geral' },
         lixeira: 'lixeira_sistema_v1',
@@ -1136,7 +1142,7 @@
     ];
 
     let appState = {
-        cards: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
+        cards: { lotes: [], usados: [], abertos: [], ocultar: false, filtroStatus: 'todos', ultimo: null },
         emails: { lotes: [], usados: [], abertos: [], filtroAtual: 'todos', status: {}, statusData: {}, ultimo: null, senhaPadrao: '', pastaAberta: false },
         dados: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
         lixeira: [], arquivados: [], abaAtiva: 'cards'
@@ -1156,7 +1162,7 @@
             const migrado = await BancoDB.get('migracao_v17_concluida');
             if (!migrado) {
                 const chavesAll = [
-                    CHAVES.cards.lotes, CHAVES.cards.usados, CHAVES.cards.abertos, CHAVES.cards.ocultar, CHAVES.cards.ultimo,
+                    CHAVES.cards.lotes, CHAVES.cards.usados, CHAVES.cards.abertos, CHAVES.cards.ocultar, CHAVES.cards.filtroStatus, CHAVES.cards.ultimo,
                     CHAVES.emails.lotes, CHAVES.emails.usados, CHAVES.emails.abertos, CHAVES.emails.filtroAtual, CHAVES.emails.status, CHAVES.emails.statusData, CHAVES.emails.ultimo, CHAVES.emails.senhaPadrao, CHAVES.emails.pastaAberta,
                     CHAVES.dados.lotes, CHAVES.dados.usados, CHAVES.dados.abertos, CHAVES.dados.ocultar, CHAVES.dados.ultimo,
                     CHAVES.lixeira, CHAVES.arquivados, CHAVES.abaAtiva, CHAVES.configBackup
@@ -1179,6 +1185,7 @@
             appState.cards.usados = await BancoDB.get(CHAVES.cards.usados) || [];
             appState.cards.abertos = await BancoDB.get(CHAVES.cards.abertos) || [];
             appState.cards.ocultar = await BancoDB.get(CHAVES.cards.ocultar) || false;
+            appState.cards.filtroStatus = await BancoDB.get(CHAVES.cards.filtroStatus) || 'todos';
             appState.cards.ultimo = await BancoDB.get(CHAVES.cards.ultimo) || null;
 
             appState.emails.lotes = await BancoDB.get(CHAVES.emails.lotes) || [];
@@ -1595,6 +1602,15 @@
                 filtrarItens(tipo.toLowerCase());
             });
         });
+
+        const selectFiltroCards = document.getElementById('filtroStatusCards');
+        if (selectFiltroCards) {
+            selectFiltroCards.onchange = (e) => {
+                appState.cards.filtroStatus = e.target.value;
+                BancoDB.set(CHAVES.cards.filtroStatus, appState.cards.filtroStatus);
+                filtrarItens('cards');
+            };
+        }
 
         document.getElementById('btnOcultarUsadosCards').onclick = () => alternarFiltroCards();
         document.getElementById('btnOcultarUsadosDados').onclick = () => alternarFiltroDados();
@@ -2214,7 +2230,13 @@
         atualizarBotaoFiltroVisual('dados'); filtrarItens('dados');
     }
     function atualizarBotaoFiltroVisual(tipo) {
-        if (tipo === 'cards') { const b = document.getElementById('btnOcultarUsadosCards'); b.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados'; b.classList.toggle('ativo', appState.cards.ocultar); }
+        if (tipo === 'cards') {
+            const b = document.getElementById('btnOcultarUsadosCards');
+            b.innerText = appState.cards.ocultar ? 'Mostrar Usados' : 'Ocultar Usados';
+            b.classList.toggle('ativo', appState.cards.ocultar);
+            const sCard = document.getElementById('filtroStatusCards');
+            if (sCard) sCard.value = appState.cards.filtroStatus || 'todos';
+        }
         else if (tipo === 'dados') { const b = document.getElementById('btnOcultarUsadosDados'); b.innerText = appState.dados.ocultar ? 'Mostrar Usados' : 'Ocultar Usados'; b.classList.toggle('ativo', appState.dados.ocultar); }
         else if (tipo === 'emails') { const s = document.getElementById('filtroStatusEmails'); if (s) s.value = appState.emails.filtroAtual; }
     }
@@ -2237,7 +2259,16 @@
 
     function mudarStatusItemCard(idLote, idItem, novoStatus) {
         const lote = appState.cards.lotes.find(l => l.idLote === idLote);
-        if (lote) { const item = lote.itens.find(i => i.idItem === idItem); if (item) { item.statusCard = novoStatus; BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes); } }
+        if (lote) {
+            const item = lote.itens.find(i => i.idItem === idItem);
+            if (item) {
+                item.statusCard = novoStatus;
+                BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes);
+            }
+        }
+        if (appState.cards.filtroStatus && appState.cards.filtroStatus !== 'todos') {
+            filtrarItens('cards');
+        }
     }
 
     function filtrarItens(tipo) {
@@ -2277,6 +2308,11 @@
                     const statusAtual = appState.emails.status[item.principal.toLowerCase()] || item.status || '';
                     if (appState.emails.filtroAtual === 'ocultar_usados') filtroOk = !jaFoiUsado || ehOUltimo;
                     else if (appState.emails.filtroAtual !== 'todos') filtroOk = (statusAtual === appState.emails.filtroAtual);
+                } else if (tipo === 'cards') {
+                    const stCard = item.statusCard || (item.isLive ? 'live' : 'pendente');
+                    const statusCardOk = (appState.cards.filtroStatus === 'todos') || (stCard === appState.cards.filtroStatus);
+                    const usadoOk = !appState.cards.ocultar || !jaFoiUsado || ehOUltimo;
+                    filtroOk = statusCardOk && usadoOk;
                 } else {
                     filtroOk = !appState[tipo].ocultar || !jaFoiUsado || ehOUltimo;
                 }
@@ -2291,7 +2327,8 @@
             } else {
                 let ocultar = false;
                 if (tipo === 'emails' && appState.emails.filtroAtual !== 'todos') ocultar = (visiveis === 0);
-                else if (tipo !== 'emails' && appState[tipo].ocultar) ocultar = (visiveis === 0);
+                else if (tipo === 'cards' && (appState.cards.ocultar || (appState.cards.filtroStatus && appState.cards.filtroStatus !== 'todos'))) ocultar = (visiveis === 0);
+                else if (tipo !== 'emails' && tipo !== 'cards' && appState[tipo].ocultar) ocultar = (visiveis === 0);
                 cardElemento.style.display = ocultar ? 'none' : 'block';
             }
         });
@@ -2440,7 +2477,7 @@
     }
 
     function gerarglobaisBackupJSON() {
-        return JSON.stringify({ versao: '17.5', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
+        return JSON.stringify({ versao: '17.6', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
     }
 
     function exportarBackup() {
@@ -2461,16 +2498,18 @@
                 mostrarStatus('⏳ Gravando backup no Banco de Dados...');
                 let data = JSON.parse(e.target.result);
                 
-                appState.cards = data.cards || appState.cards;
-                appState.emails = data.emails || appState.emails;
+                appState.cards = { ...appState.cards, ...(data.cards || {}) };
+                if (!appState.cards.filtroStatus) appState.cards.filtroStatus = 'todos';
+                appState.emails = { ...appState.emails, ...(data.emails || {}) };
                 if (!appState.emails.statusData) appState.emails.statusData = {};
-                appState.dados = data.dados || appState.dados;
+                appState.dados = { ...appState.dados, ...(data.dados || {}) };
                 appState.lixeira = data.lixeira || [];
                 appState.arquivados = data.arquivados || [];
 
                 await Promise.all([
                     BancoDB.set(CHAVES.cards.lotes, appState.cards.lotes),
                     BancoDB.set(CHAVES.cards.usados, appState.cards.usados),
+                    BancoDB.set(CHAVES.cards.filtroStatus, appState.cards.filtroStatus),
                     BancoDB.set(CHAVES.emails.lotes, appState.emails.lotes),
                     BancoDB.set(CHAVES.emails.usados, appState.emails.usados),
                     BancoDB.set(CHAVES.emails.status, appState.emails.status),
@@ -2481,6 +2520,9 @@
                     BancoDB.set(CHAVES.arquivados, appState.arquivados)
                 ]);
 
+                atualizarBotaoFiltroVisual('cards');
+                atualizarBotaoFiltroVisual('emails');
+                atualizarBotaoFiltroVisual('dados');
                 renderizarTodosLotes('cards'); renderizarTodosLotes('emails'); renderizarTodosLotes('dados');
                 renderizarLixeira(); renderizarArquivados();
                 alert('✅ Backup importado com sucesso!');
@@ -2496,7 +2538,7 @@
         if (!token || !chatId) { alert('⚠️ Preencha Token e Chat ID.'); return; }
         const blob = new Blob([gerarglobaisBackupJSON()], { type: 'application/json' });
         const formData = new FormData();
-        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.5*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
+        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.6*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
         mostrarStatus('⏳ Enviando para o Telegram...');
         fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: formData })
         .then(res => res.json()).then(d => d.ok ? alert('✅ Enviado!') : alert('❌ Erro: ' + d.description)).catch(() => alert('❌ Erro de conexão.'));
