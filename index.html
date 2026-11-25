@@ -635,6 +635,14 @@
             text-transform: uppercase;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
+        .data-status-badge {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 11px;
+            color: #aaa;
+            font-family: monospace;
+            font-weight: 600;
+        }
 
         .painel-selecao-flutuante {
             position: fixed;
@@ -883,7 +891,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.4 Ultra</div>
+                <div class="versao-tag">v17.5 Ultra</div>
             </div>
             <div class="badge-sub">CARDS PRO</div>
         </div>
@@ -923,7 +931,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.4 Ultra</div>
+                <div class="versao-tag">v17.5 Ultra</div>
             </div>
             <div class="badge-sub">EMAILS PRO</div>
         </div>
@@ -988,7 +996,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.4 Ultra</div>
+                <div class="versao-tag">v17.5 Ultra</div>
             </div>
             <div class="badge-sub">DADOS PRO</div>
         </div>
@@ -1019,7 +1027,7 @@
         <div class="netflix-header">
             <div class="logo-grupo">
                 <div class="logo-bklogins">bklogins</div>
-                <div class="versao-tag">v17.4 Ultra</div>
+                <div class="versao-tag">v17.5 Ultra</div>
             </div>
             <div class="badge-sub">GERENCIADOR PRO</div>
         </div>
@@ -1109,7 +1117,7 @@
 
     const CHAVES = {
         cards: { lotes: 'lotes_cartoes_geral', usados: 'botoes_usados_cartoes_geral', abertos: 'lotes_abertos_cartoes_geral', ocultar: 'filtro_ocultar_cartoes_geral', ultimo: 'ultimo_copiado_cartoes_geral' },
-        emails: { lotes: 'lotes_emails_geral', usados: 'botoes_usados_emails_geral', abertos: 'lotes_abertos_emails_geral', ocultar: 'filtro_ocultar_emails_geral', filtroAtual: 'filtro_atual_emails_v16_9', status: 'status_emails_geral', ultimo: 'ultimo_copiado_emails_geral', senhaPadrao: 'senha_padrao_assinadas_geral', pastaAberta: 'pasta_assinadas_aberta' },
+        emails: { lotes: 'lotes_emails_geral', usados: 'botoes_usados_emails_geral', abertos: 'lotes_abertos_emails_geral', ocultar: 'filtro_ocultar_emails_geral', filtroAtual: 'filtro_atual_emails_v16_9', status: 'status_emails_geral', statusData: 'status_data_emails_v17_5', ultimo: 'ultimo_copiado_emails_geral', senhaPadrao: 'senha_padrao_assinadas_geral', pastaAberta: 'pasta_assinadas_aberta' },
         dados: { lotes: 'lotes_dados_geral', usados: 'botoes_usados_dados_geral', abertos: 'lotes_abertos_dados_geral', ocultar: 'filtro_ocultar_dados_geral', ultimo: 'ultimo_copiado_dados_geral' },
         lixeira: 'lixeira_sistema_v1',
         arquivados: 'arquivados_sistema_v1',
@@ -1129,7 +1137,7 @@
 
     let appState = {
         cards: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
-        emails: { lotes: [], usados: [], abertos: [], filtroAtual: 'todos', status: {}, ultimo: null, senhaPadrao: '', pastaAberta: false },
+        emails: { lotes: [], usados: [], abertos: [], filtroAtual: 'todos', status: {}, statusData: {}, ultimo: null, senhaPadrao: '', pastaAberta: false },
         dados: { lotes: [], usados: [], abertos: [], ocultar: false, ultimo: null },
         lixeira: [], arquivados: [], abaAtiva: 'cards'
     };
@@ -1149,7 +1157,7 @@
             if (!migrado) {
                 const chavesAll = [
                     CHAVES.cards.lotes, CHAVES.cards.usados, CHAVES.cards.abertos, CHAVES.cards.ocultar, CHAVES.cards.ultimo,
-                    CHAVES.emails.lotes, CHAVES.emails.usados, CHAVES.emails.abertos, CHAVES.emails.filtroAtual, CHAVES.emails.status, CHAVES.emails.ultimo, CHAVES.emails.senhaPadrao, CHAVES.emails.pastaAberta,
+                    CHAVES.emails.lotes, CHAVES.emails.usados, CHAVES.emails.abertos, CHAVES.emails.filtroAtual, CHAVES.emails.status, CHAVES.emails.statusData, CHAVES.emails.ultimo, CHAVES.emails.senhaPadrao, CHAVES.emails.pastaAberta,
                     CHAVES.dados.lotes, CHAVES.dados.usados, CHAVES.dados.abertos, CHAVES.dados.ocultar, CHAVES.dados.ultimo,
                     CHAVES.lixeira, CHAVES.arquivados, CHAVES.abaAtiva, CHAVES.configBackup
                 ];
@@ -1178,6 +1186,7 @@
             appState.emails.abertos = await BancoDB.get(CHAVES.emails.abertos) || [];
             appState.emails.filtroAtual = await BancoDB.get(CHAVES.emails.filtroAtual) || 'todos';
             appState.emails.status = await BancoDB.get(CHAVES.emails.status) || {};
+            appState.emails.statusData = await BancoDB.get(CHAVES.emails.statusData) || {};
             appState.emails.ultimo = await BancoDB.get(CHAVES.emails.ultimo) || null;
             appState.emails.senhaPadrao = await BancoDB.get(CHAVES.emails.senhaPadrao) || '';
             appState.emails.pastaAberta = await BancoDB.get(CHAVES.emails.pastaAberta) || false;
@@ -1279,6 +1288,10 @@
         const agora = new Date();
         return agora.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' • ' + 
                agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function obterDataStatusHoje() {
+        return new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
     function reordenarEAtualizarLotes(tipo) {
@@ -2007,8 +2020,15 @@
         BancoDB.set(CHAVES[tipo].lotes, appState[tipo].lotes);
 
         if (tipo === 'emails') {
-            itens.forEach(i => { appState.emails.status[i.principal.toLowerCase()] = statusImportacao; });
-            BancoDB.set(CHAVES[tipo].status, appState.emails.status);
+            const dataHoje = obterDataStatusHoje();
+            if (!appState.emails.statusData) appState.emails.statusData = {};
+            itens.forEach(i => {
+                const chave = i.principal.toLowerCase();
+                appState.emails.status[chave] = statusImportacao;
+                if (statusImportacao) appState.emails.statusData[chave] = dataHoje;
+            });
+            BancoDB.set(CHAVES.emails.status, appState.emails.status);
+            BancoDB.set(CHAVES.emails.statusData, appState.emails.statusData);
         }
 
         campo.value = '';
@@ -2202,10 +2222,17 @@
     function mudarStatusItemEmail(idLote, idItem, emailText, novoStatus) {
         const emailChave = emailText.toLowerCase();
         appState.emails.status[emailChave] = novoStatus;
+        if (!appState.emails.statusData) appState.emails.statusData = {};
+        if (novoStatus) {
+            appState.emails.statusData[emailChave] = obterDataStatusHoje();
+        } else {
+            delete appState.emails.statusData[emailChave];
+        }
         BancoDB.set(CHAVES.emails.status, appState.emails.status);
+        BancoDB.set(CHAVES.emails.statusData, appState.emails.statusData);
         const lote = appState.emails.lotes.find(l => l.idLote === idLote);
         if (lote) { const item = lote.itens.find(i => i.idItem === idItem); if (item) { item.status = novoStatus; BancoDB.set(CHAVES.emails.lotes, appState.emails.lotes); } }
-        filtrarItens('emails');
+        renderizarTodosLotes('emails');
     }
 
     function mudarStatusItemCard(idLote, idItem, novoStatus) {
@@ -2357,8 +2384,10 @@
                     tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td><span class="cartao-num">${item.principal}</span> <button class="${cSt}" data-id="${idU}">${tBtn}</button></td><td>${item.secundario}</td><td>${item.terciario} <select class="status-card-select"><option value="pendente" ${stC === 'pendente'?'selected':''}>⏳</option><option value="live" ${stC === 'live'?'selected':''}>✅</option><option value="die" ${stC === 'die'?'selected':''}>❌</option></select></td><td><button class="btn-excluir-item">🗑️</button></td>`;
                     tr.querySelector('.status-card-select').onchange = (e) => mudarStatusItemCard(lote.idLote, item.idItem, e.target.value);
                 } else if (tipo === 'emails') {
-                    const stA = appState.emails.status[item.principal.toLowerCase()] || item.status || '';
-                    tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td class="email-text">${item.principal}</td><td class="email-text">${appState.emails.senhaPadrao || item.secundario}</td><td><select class="status-select"><option value="" ${stA===''?'selected':''}>-</option><option value="virgem" ${stA==='virgem'?'selected':''}>Virgem</option><option value="suspensa" ${stA==='suspensa'?'selected':''}>Suspensa</option><option value="assinada" ${stA==='assinada'?'selected':''}>Assinada</option><option value="anuncios" ${stA==='anuncios'?'selected':''}>Anúncios</option><option value="padrao" ${stA==='padrao'?'selected':''}>Padrão</option><option value="premium" ${stA==='premium'?'selected':''}>Premium</option><option value="queimada" ${stA==='queimada'?'selected':''}>Queimada</option></select></td><td><button class="${cSt}" data-id="${idU}">${tBtn}</button> <button class="btn-excluir-item">🗑️</button></td>`;
+                    const emailChave = item.principal.toLowerCase();
+                    const stA = appState.emails.status[emailChave] || item.status || '';
+                    const dtStatus = (stA && appState.emails.statusData && appState.emails.statusData[emailChave]) ? appState.emails.statusData[emailChave] : '';
+                    tr.innerHTML = `<td><span class="badge-id">${item.idItem}</span></td><td class="email-text">${item.principal}</td><td class="email-text">${appState.emails.senhaPadrao || item.secundario}</td><td><select class="status-select"><option value="" ${stA===''?'selected':''}>-</option><option value="virgem" ${stA==='virgem'?'selected':''}>Virgem</option><option value="suspensa" ${stA==='suspensa'?'selected':''}>Suspensa</option><option value="assinada" ${stA==='assinada'?'selected':''}>Assinada</option><option value="anuncios" ${stA==='anuncios'?'selected':''}>Anúncios</option><option value="padrao" ${stA==='padrao'?'selected':''}>Padrão</option><option value="premium" ${stA==='premium'?'selected':''}>Premium</option><option value="queimada" ${stA==='queimada'?'selected':''}>Queimada</option></select>${dtStatus ? `<span class="data-status-badge">${dtStatus}</span>` : ''}</td><td><button class="${cSt}" data-id="${idU}">${tBtn}</button> <button class="btn-excluir-item">🗑️</button></td>`;
                     tr.querySelector('.status-select').onchange = (e) => mudarStatusItemEmail(lote.idLote, item.idItem, item.principal, e.target.value);
                 } else {
                     let cCpf = 'btn-copiar-sec btn-cpf', tCpf = 'CPF';
@@ -2411,7 +2440,7 @@
     }
 
     function gerarglobaisBackupJSON() {
-        return JSON.stringify({ versao: '17.4', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
+        return JSON.stringify({ versao: '17.5', dataExportacao: new Date().toLocaleString('pt-BR'), cards: appState.cards, emails: appState.emails, dados: appState.dados, lixeira: appState.lixeira, arquivados: appState.arquivados }, null, 2);
     }
 
     function exportarBackup() {
@@ -2434,6 +2463,7 @@
                 
                 appState.cards = data.cards || appState.cards;
                 appState.emails = data.emails || appState.emails;
+                if (!appState.emails.statusData) appState.emails.statusData = {};
                 appState.dados = data.dados || appState.dados;
                 appState.lixeira = data.lixeira || [];
                 appState.arquivados = data.arquivados || [];
@@ -2444,6 +2474,7 @@
                     BancoDB.set(CHAVES.emails.lotes, appState.emails.lotes),
                     BancoDB.set(CHAVES.emails.usados, appState.emails.usados),
                     BancoDB.set(CHAVES.emails.status, appState.emails.status),
+                    BancoDB.set(CHAVES.emails.statusData, appState.emails.statusData),
                     BancoDB.set(CHAVES.dados.lotes, appState.dados.lotes),
                     BancoDB.set(CHAVES.dados.usados, appState.dados.usados),
                     BancoDB.set(CHAVES.lixeira, appState.lixeira),
@@ -2465,7 +2496,7 @@
         if (!token || !chatId) { alert('⚠️ Preencha Token e Chat ID.'); return; }
         const blob = new Blob([gerarglobaisBackupJSON()], { type: 'application/json' });
         const formData = new FormData();
-        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.4*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
+        formData.append('chat_id', chatId); formData.append('caption', `📦 *Backup bklogins v17.5*\n📅 Data: ${new Date().toLocaleString('pt-BR')}`); formData.append('parse_mode', 'Markdown'); formData.append('document', blob, `bklogins_backup_${Date.now()}.json`);
         mostrarStatus('⏳ Enviando para o Telegram...');
         fetch(`https://api.telegram.org/bot${token}/sendDocument`, { method: 'POST', body: formData })
         .then(res => res.json()).then(d => d.ok ? alert('✅ Enviado!') : alert('❌ Erro: ' + d.description)).catch(() => alert('❌ Erro de conexão.'));
